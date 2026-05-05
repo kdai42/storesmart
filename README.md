@@ -1,2 +1,0 @@
-# storesmart
-Store Visit Form
