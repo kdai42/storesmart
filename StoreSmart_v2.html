@@ -1,0 +1,1627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#E31837">
+<title>StoreSmart – Store Visit</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{
+  --red:#E31837;--red-dark:#c01230;--red-glow:rgba(227,24,55,0.22);
+  --bg:#111;--surface:#1a1a1a;--card:#222;--border:#2e2e2e;--border2:#3a3a3a;
+  --white:#f4f4f4;--dim:#888;--dimmer:#444;
+  --green:#22c55e;--green-bg:rgba(34,197,94,0.12);--green-border:rgba(34,197,94,0.3);
+  --yellow:#f59e0b;--yellow-bg:rgba(245,158,11,0.12);
+  --blue:#3b82f6;--blue-bg:rgba(59,130,246,0.1);
+  --safe-bottom:env(safe-area-inset-bottom,20px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;}
+body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--white);font-size:16px;line-height:1.5;overscroll-behavior:none;}
+.app{display:flex;flex-direction:column;height:100dvh;max-width:480px;margin:0 auto;position:relative;overflow:hidden;}
+
+/* TOP BAR */
+.top-bar{background:var(--red);padding:12px 16px 10px;padding-top:max(12px,env(safe-area-inset-top));flex-shrink:0;z-index:10;}
+.top-bar-row{display:flex;align-items:center;gap:10px;}
+.logo{width:38px;height:38px;background:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:8px;font-weight:900;color:var(--red);text-align:center;line-height:1.1;flex-shrink:0;}
+.top-title{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:white;}
+.top-sub{font-size:11px;color:rgba(255,255,255,.7);}
+.sec-badge{margin-left:auto;background:rgba(255,255,255,.2);color:white;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap;}
+.progress-bar{height:3px;background:rgba(255,255,255,.2);margin-top:10px;border-radius:99px;overflow:hidden;}
+.progress-fill{height:100%;background:white;border-radius:99px;transition:width .4s cubic-bezier(.16,1,.3,1);}
+
+/* SCREENS */
+.screens{flex:1;overflow:hidden;position:relative;}
+.screen{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:20px 16px 100px;display:none;background:var(--bg);animation:slideIn .3s cubic-bezier(.16,1,.3,1);}
+.screen.active{display:block;}
+@keyframes slideIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+
+/* QUESTIONS */
+.q-num{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+.q-text{font-family:'Barlow Condensed',sans-serif;font-size:34px;font-weight:900;line-height:1.1;color:var(--white);margin-bottom:8px;}
+.q-sub{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;color:var(--white);margin-bottom:12px;line-height:1.2;margin-top:18px;}
+.q-hint{font-size:13px;color:var(--dim);margin-bottom:14px;line-height:1.5;}
+
+/* INPUTS */
+.mobile-input{width:100%;background:var(--surface);border:2px solid var(--border2);border-radius:14px;color:var(--white);font-family:'Barlow',sans-serif;font-size:16px;padding:13px 16px;outline:none;transition:border-color .2s;-webkit-appearance:none;appearance:none;}
+.mobile-input:focus{border-color:var(--red);}
+.mobile-input::placeholder{color:var(--dimmer);}
+textarea.mobile-input{min-height:90px;resize:none;line-height:1.5;}
+select.mobile-input{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath fill='%23888' d='M6 8L0 0h12z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center;padding-right:44px;}
+
+/* ANSWER BUTTONS */
+.answer-stack{display:flex;flex-direction:column;gap:8px;margin-bottom:6px;}
+.answer-btn{width:100%;padding:15px 18px;border-radius:12px;border:2px solid var(--border2);background:var(--surface);color:var(--dim);font-family:'Barlow',sans-serif;font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:12px;transition:all .15s;text-align:left;}
+.answer-btn .a-icon{font-size:18px;flex-shrink:0;}
+.answer-btn .a-label{flex:1;}
+.answer-btn .a-check{width:22px;height:22px;border-radius:50%;border:2px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.answer-btn:active{transform:scale(.98);}
+.sel-yes{border-color:var(--green)!important;background:var(--green-bg)!important;color:var(--green)!important;}
+.sel-yes .a-check{background:var(--green);border-color:var(--green);}
+.sel-yes .a-check::after{content:'✓';font-size:12px;color:white;font-weight:900;}
+.sel-no{border-color:var(--red)!important;background:rgba(227,24,55,.1)!important;color:#ff7090!important;}
+.sel-no .a-check{background:var(--red);border-color:var(--red);}
+.sel-no .a-check::after{content:'✓';font-size:12px;color:white;font-weight:900;}
+.sel-na{border-color:var(--yellow)!important;background:var(--yellow-bg)!important;color:var(--yellow)!important;}
+.sel-na .a-check{background:var(--yellow);border-color:var(--yellow);}
+.sel-na .a-check::after{content:'✓';font-size:12px;color:white;font-weight:900;}
+
+/* VISIT TYPE CARDS */
+.visit-type-grid{display:flex;flex-direction:column;gap:10px;}
+.visit-type-card{padding:18px 20px;border-radius:16px;border:2px solid var(--border2);background:var(--surface);cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:14px;}
+.visit-type-card:active{transform:scale(.98);}
+.visit-type-card.selected{border-color:var(--red);background:rgba(227,24,55,.08);}
+.vtc-icon{font-size:28px;flex-shrink:0;}
+.vtc-body{flex:1;}
+.vtc-title{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:var(--white);}
+.vtc-desc{font-size:12px;color:var(--dim);margin-top:2px;line-height:1.4;}
+.vtc-arrow{font-size:18px;color:var(--dimmer);flex-shrink:0;}
+.visit-type-card.selected .vtc-arrow{color:var(--red);}
+
+/* CHIPS */
+.chip-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px;}
+.chip{padding:11px 16px;border-radius:99px;border:2px solid var(--border2);background:var(--surface);color:var(--dim);font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:all .15s;}
+.chip:active{transform:scale(.96);}
+.chip.on{border-color:var(--red);background:rgba(227,24,55,.12);color:var(--white);}
+
+/* ENGAGEMENT RATING */
+.engagement-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:6px;}
+.eng-btn{padding:10px 4px;border-radius:10px;border:2px solid var(--border2);background:var(--surface);cursor:pointer;text-align:center;transition:all .15s;}
+.eng-btn:active{transform:scale(.96);}
+.eng-btn .eng-num{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;color:var(--dim);}
+.eng-btn .eng-label{font-size:9px;color:var(--dimmer);text-transform:uppercase;letter-spacing:.3px;margin-top:2px;line-height:1.2;}
+.eng-btn.sel{border-color:var(--red);background:rgba(227,24,55,.12);}
+.eng-btn.sel .eng-num{color:var(--red);}
+.eng-btn.sel .eng-label{color:var(--red);}
+
+/* ACTION ITEMS */
+.action-item{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;}
+.action-num{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--red);margin-bottom:8px;}
+.action-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;}
+
+/* TEMP INPUTS */
+.temp-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;}
+.temp-card{background:var(--surface);border:2px solid var(--border2);border-radius:12px;padding:12px 8px;text-align:center;}
+.temp-card label{display:block;font-size:10px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;}
+.temp-card input{width:100%;background:transparent;border:none;color:var(--white);font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;text-align:center;outline:none;-webkit-appearance:none;}
+.temp-unit{font-size:10px;color:var(--dim);margin-top:2px;}
+
+/* CONDITIONAL */
+.cond{display:none;margin-top:14px;animation:fadeUp .2s ease;}
+.cond.show{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ALERTS */
+.alert{border-radius:12px;padding:14px 16px;display:flex;align-items:flex-start;gap:10px;font-size:13px;font-weight:600;line-height:1.4;margin-top:12px;margin-bottom:4px;}
+.alert-stop{background:rgba(227,24,55,.12);border:1.5px solid rgba(227,24,55,.3);color:#ff7090;}
+.alert-ok{background:var(--green-bg);border:1.5px solid var(--green-border);color:var(--green);}
+.alert-warn{background:var(--yellow-bg);border:1.5px solid rgba(245,158,11,.3);color:var(--yellow);}
+.alert-info{background:var(--blue-bg);border:1.5px solid rgba(59,130,246,.3);color:var(--blue);}
+.a-icon-lg{font-size:20px;flex-shrink:0;}
+
+/* PHOTO */
+.photo-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px;}
+.photo-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:16px;}
+.photo-tile{aspect-ratio:4/3;border-radius:14px;border:2px dashed var(--border2);background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden;transition:border-color .2s;}
+.photo-tile input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.pt-icon{font-size:24px;margin-bottom:6px;pointer-events:none;}
+.pt-label{font-size:10px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.3px;text-align:center;padding:0 6px;pointer-events:none;}
+.photo-tile.captured{border-color:var(--green);border-style:solid;}
+.photo-tile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+.pt-badge{position:absolute;top:5px;right:5px;background:var(--green);border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;z-index:2;pointer-events:none;}
+
+/* SCORE DISPLAY */
+.score-hero{text-align:center;padding:16px 0 12px;}
+.score-ring{width:130px;height:130px;margin:0 auto 12px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;}
+.score-ring svg{position:absolute;inset:0;transform:rotate(-90deg);}
+.score-val{font-family:'Barlow Condensed',sans-serif;font-size:48px;font-weight:900;line-height:1;position:relative;z-index:1;}
+.score-max{font-size:13px;color:var(--dim);position:relative;z-index:1;}
+.score-grade{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;}
+.score-breakdown{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.score-section{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center;}
+.ss-label{font-size:11px;color:var(--dim);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
+.ss-score{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;}
+.ss-max{font-size:12px;color:var(--dim);}
+
+/* SUMMARY */
+.summary-list{display:flex;flex-direction:column;gap:0;border-radius:14px;overflow:hidden;border:1px solid var(--border);margin-bottom:16px;}
+.sum-row{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;background:var(--surface);border-bottom:1px solid var(--border);}
+.sum-row:last-child{border-bottom:none;}
+.sum-key{font-size:13px;color:var(--dim);}
+.sum-val{font-size:13px;font-weight:700;}
+.v-yes{color:var(--green);}
+.v-no{color:#ff7090;}
+.v-na{color:var(--yellow);}
+.v-neu{color:var(--white);}
+
+/* BOTTOM NAV */
+.bottom-nav{flex-shrink:0;background:var(--surface);border-top:1px solid var(--border);padding:12px 16px;padding-bottom:max(12px,var(--safe-bottom));display:flex;gap:10px;align-items:center;z-index:10;}
+.btn-back{width:52px;height:52px;background:var(--card);border:1.5px solid var(--border2);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;flex-shrink:0;transition:background .15s;}
+.btn-back:active{background:var(--border2);}
+.btn-next{flex:1;height:52px;background:var(--red);border:none;border-radius:14px;color:white;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 20px var(--red-glow);transition:all .15s;}
+.btn-next:active{transform:scale(.98);background:var(--red-dark);}
+.btn-submit{flex:1;height:52px;background:var(--green);border:none;border-radius:14px;color:white;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .15s;}
+.btn-submit:active{transform:scale(.98);}
+
+/* OVERLAY */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:999;backdrop-filter:blur(6px);}
+.overlay.show{display:flex;}
+.overlay-card{background:var(--card);border:1px solid var(--border2);border-radius:20px;padding:36px 28px;text-align:center;width:min(340px,90vw);}
+.spinner{width:44px;height:44px;border:3px solid var(--border);border-top-color:var(--red);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 16px;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ov-title{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;text-transform:uppercase;margin-bottom:8px;}
+.ov-msg{font-size:13px;color:var(--dim);line-height:1.6;}
+
+/* SUCCESS */
+.s-ring{width:90px;height:90px;border-radius:50%;background:var(--green-bg);border:3px solid var(--green);display:flex;align-items:center;justify-content:center;font-size:40px;margin:20px auto 18px;}
+.s-title{font-family:'Barlow Condensed',sans-serif;font-size:36px;font-weight:900;text-transform:uppercase;color:var(--green);text-align:center;letter-spacing:.5px;margin-bottom:8px;}
+.s-sub{font-size:14px;color:var(--dim);line-height:1.6;text-align:center;margin-bottom:20px;}
+.s-ref{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:16px;font-size:12px;color:var(--dim);}
+.s-ref strong{color:var(--white);font-size:14px;display:block;margin-bottom:3px;}
+.s-btns{display:flex;flex-direction:column;gap:10px;}
+.btn-full{width:100%;padding:15px;border-radius:14px;border:none;font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;transition:all .15s;}
+.btn-full:active{transform:scale(.98);}
+.btn-red{background:var(--red);color:white;box-shadow:0 4px 20px var(--red-glow);}
+.btn-ghost{background:var(--surface);color:var(--dim);border:1.5px solid var(--border2);}
+.btn-blue{background:var(--blue);color:white;}
+
+/* SPLASH */
+.splash-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100%;padding:40px 24px;}
+.splash-logo-ring{width:90px;height:90px;background:var(--red);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:24px;box-shadow:0 8px 32px var(--red-glow);}
+.splash-logo-text{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:900;color:white;text-align:center;line-height:1.1;}
+
+.sec-divider{height:1px;background:var(--border);margin:20px 0;}
+.field-err{font-size:12px;color:#ff7090;font-weight:600;margin-top:8px;display:none;}
+.has-err .mobile-input,.has-err select{border-color:var(--red)!important;}
+.has-err .field-err{display:block;}
+
+input[type="number"]{-moz-appearance:textfield;}
+input[type="number"]::-webkit-inner-spin-button,input[type="number"]::-webkit-outer-spin-button{-webkit-appearance:none;}
+</style>
+</head>
+<body>
+<div class="app">
+
+<div class="top-bar">
+  <div class="top-bar-row">
+    <div class="logo">SS</div>
+    <div>
+      <div class="top-title">StoreSmart</div>
+      <div class="top-sub" id="topSub">Pizza Hut Australia · Store Visit</div>
+    </div>
+    <div class="sec-badge" id="secBadge">Welcome</div>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="pgFill" style="width:0%"></div></div>
+</div>
+
+<div class="screens">
+
+<!-- ══ SPLASH ══ -->
+<div class="screen active" id="sc-splash" data-sec="Welcome">
+  <div class="splash-wrap">
+    <div class="splash-logo-ring"><div class="splash-logo-text">STORE<br>SMART</div></div>
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:44px;font-weight:900;color:var(--white);letter-spacing:1px;text-align:center;margin-bottom:8px;">StoreSmart</div>
+    <div style="font-size:14px;color:var(--dim);text-align:center;margin-bottom:8px;">Smart visits. Better stores.</div>
+    <div style="width:40px;height:2px;background:var(--red);border-radius:99px;margin:20px auto;"></div>
+    <div class="q-hint" style="text-align:center;margin-bottom:24px;">Pizza Hut Australia · Flynn Restaurant Group<br>Area Manager Store Visit Platform</div>
+    <button class="btn-full btn-red" onclick="goTo('sc-login')" style="max-width:320px;">Start Store Visit →</button>
+    <button class="btn-full btn-ghost" onclick="viewRecent()" style="max-width:320px;margin-top:10px;">📋 My Recent Visits</button>
+    <div style="font-size:11px;color:var(--dimmer);text-align:center;margin-top:20px;text-transform:uppercase;letter-spacing:1px;">StoreSmart v2.0</div>
+  </div>
+</div>
+
+<!-- ══ LOGIN ══ -->
+<div class="screen" id="sc-login" data-sec="Login">
+  <div class="q-num">Step 1 · Who are you?</div>
+  <div class="q-text">Select your name</div>
+  <div class="q-hint">Your stores and details will auto-load</div>
+  <div class="field-group" id="fg-am">
+    <select class="mobile-input" id="selAM" onchange="onAMSelect()">
+      <option value="">— Tap to select —</option>
+      <option>Abhishek Stephen</option><option>Alex Woolfenden</option>
+      <option>Daniel Diau</option><option>Darren Macclure</option>
+      <option>Jason Yang</option><option>Jonathan Reed</option>
+      <option>Joshua Coxen</option><option>Jowin Bullecer</option>
+      <option>Kellie Patane</option><option>Kevalkumar Darji</option>
+      <option>Li, Ying (Sophie)</option><option>Mohab Maggar</option>
+      <option>Nathan Lim</option><option>Pheng Toeng</option>
+      <option>Rahul Patel</option><option>Rhys Healey</option>
+      <option>Ronnie Sehmi</option><option>Sebastian Bivona</option>
+      <option>Thomas Phillips</option><option>Yasmin Mays</option>
+    </select>
+    <div class="field-err">Please select your name</div>
+  </div>
+  <div id="amInfoBox" style="display:none;margin-top:12px;">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;">
+      <div style="font-size:13px;color:var(--white);font-weight:600;" id="amInfoName"></div>
+      <div style="font-size:12px;color:var(--dim);margin-top:3px;" id="amInfoDetails"></div>
+    </div>
+  </div>
+  <div style="margin-top:16px;">
+    <div class="q-hint">Your email address</div>
+    <div class="field-group" id="fg-email">
+      <input class="mobile-input" type="email" id="amEmail" placeholder="you@flynnanz.com" autocomplete="email">
+      <div class="field-err">Valid email required</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ VISIT TYPE ══ -->
+<div class="screen" id="sc-visittype" data-sec="Visit Type">
+  <div class="q-num">Step 2 · Visit Type</div>
+  <div class="q-text">What kind of visit is this?</div>
+  <div class="q-hint" style="margin-bottom:20px;">Select a visit type — the form will adapt accordingly</div>
+  <div class="visit-type-grid">
+    <div class="visit-type-card" onclick="selectVisitType('structured',this)" id="vt-structured">
+      <div class="vtc-icon">📋</div>
+      <div class="vtc-body">
+        <div class="vtc-title">Structured Store Visit</div>
+        <div class="vtc-desc">Full audit — all sections, full scoring out of 100</div>
+      </div>
+      <div class="vtc-arrow">→</div>
+    </div>
+    <div class="visit-type-card" onclick="selectVisitType('peak',this)" id="vt-peak">
+      <div class="vtc-icon">⚡</div>
+      <div class="vtc-body">
+        <div class="vtc-title">Peak Visit</div>
+        <div class="vtc-desc">Team, dough & pizza quality only — streamlined scoring</div>
+      </div>
+      <div class="vtc-arrow">→</div>
+    </div>
+    <div class="visit-type-card" onclick="selectVisitType('business',this)" id="vt-business">
+      <div class="vtc-icon">🤝</div>
+      <div class="vtc-body">
+        <div class="vtc-title">Business Review</div>
+        <div class="vtc-desc">Meeting record — sales, commitments & franchisee engagement</div>
+      </div>
+      <div class="vtc-arrow">→</div>
+    </div>
+    <div class="visit-type-card" onclick="launch360()" id="vt-360">
+      <div class="vtc-icon">🔄</div>
+      <div class="vtc-body">
+        <div class="vtc-title">360° Coach Visit</div>
+        <div class="vtc-desc">Opens HutBot coaching platform — visit recorded separately</div>
+      </div>
+      <div class="vtc-arrow">↗</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ STORE ══ -->
+<div class="screen" id="sc-store" data-sec="Store">
+  <div class="q-num">Step 3 · Store Details</div>
+  <div class="q-text">Where are you visiting?</div>
+  <div class="field-group" id="fg-store">
+    <select class="mobile-input" id="selStore"><option value="">— Tap to select store —</option></select>
+    <div class="field-err">Please select a store</div>
+  </div>
+  <div style="margin-top:16px;">
+    <div class="q-hint">Manager on Duty / Franchisee</div>
+    <div class="field-group" id="fg-mod">
+      <input class="mobile-input" type="text" id="txtMOD" placeholder="Full name" autocomplete="off">
+      <div class="field-err">Required</div>
+    </div>
+  </div>
+  <div style="margin-top:16px;">
+    <div class="q-hint">Subject of visit</div>
+    <div class="field-group" id="fg-subj">
+      <input class="mobile-input" type="text" id="txtSubject" placeholder="e.g. Routine audit" autocomplete="off">
+      <div class="field-err">Required</div>
+    </div>
+  </div>
+  <div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+    <div class="field-group" id="fg-date">
+      <div class="q-hint" style="margin-bottom:8px;font-size:12px;">Visit Date</div>
+      <input class="mobile-input" type="date" id="visitDate">
+      <div class="field-err">Required</div>
+    </div>
+    <div class="field-group" id="fg-time">
+      <div class="q-hint" style="margin-bottom:8px;font-size:12px;">Visit Time</div>
+      <input class="mobile-input" type="time" id="visitTime">
+      <div class="field-err">Required</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ FOOD SAFETY (STRUCTURED) ══ -->
+<div class="screen" id="sc-hw" data-sec="Food Safety">
+  <div class="q-num">FSCC · Handwashing</div>
+  <div class="q-text">Handwash station check</div>
+  <div class="alert alert-info"><span class="a-icon-lg">ℹ️</span><span>FSCC section — worth up to 50 points total</span></div>
+
+  <div class="q-sub">Correct poster displayed?</div>
+  <div class="answer-stack">
+    <button class="answer-btn" onclick="ans('hwPoster','Yes',this,'yes')"><span class="a-icon">✅</span><span class="a-label">Yes</span><span class="a-check"></span></button>
+    <button class="answer-btn" onclick="ans('hwPoster','No',this,'no')"><span class="a-icon">❌</span><span class="a-label">No</span><span class="a-check"></span></button>
+  </div>
+  <div class="q-sub">Soap dispenser full with AMH soap?</div>
+  <div class="answer-stack">
+    <button class="answer-btn" onclick="ans('hwSoap','Yes',this,'yes')"><span class="a-icon">✅</span><span class="a-label">Yes</span><span class="a-check"></span></button>
+    <button class="answer-btn" onclick="ans('hwSoap','No',this,'no')"><span class="a-icon">❌</span><span class="a-label">No</span><span class="a-check"></span></button>
+  </div>
+  <div class="q-sub">Paper towel dispenser stocked?</div>
+  <div class="answer-stack">
+    <button class="answer-btn" onclick="ans('hwTowel','Yes',this,'yes')"><span class="a-icon">✅</span><span class="a-label">Yes</span><span class="a-check"></span></button>
+    <button class="answer-btn" onclick="ans('hwTowel','No',this,'no')"><span class="a-icon">❌</span><span class="a-label">No</span><span class="a-check"></span></button>
+  </div>
+  <div class="q-sub">Approved in-date hand sanitiser?</div>
+  <div class="answer-stack">
+    <button class="answer-btn" onclick="ans('hwSanitiser','Yes',this,'yes')"><span class="a-icon">✅</span><span class="a-label">Yes</span><span class="a-check"></span></button>
+    <button class="answer-btn" onclick="ans('hwSanitiser','No',this,'no')"><span class="a-icon">❌</span><span class="a-label">No</span><span class="a-check"></span></button>
+  </div>
+  <div style="margin-top:16px;">
+    <div class="q-hint">Corrective actions <span style="color:var(--dimmer)">(optional)</span></div>
+    <textarea class="mobile-input" id="hwCorrections" placeholder="Describe corrective actions..." rows="3"></textarea>
+  </div>
+  <div class="photo-grid">
+    <div class="photo-tile" id="pt-hw"><input type="file" accept="image/*" capture="environment" onchange="capturePhoto(this,'pt-hw','PhotoHW')"><div class="pt-icon">📷</div><div class="pt-label">Handwash Station</div></div>
+  </div>
+</div>
+
+<!-- ══ EQUIPMENT ══ -->
+<div class="screen" id="sc-equip" data-sec="Food Safety">
+  <div class="q-num">FSCC · Equipment</div>
+  <div class="q-text">Equipment & certificates</div>
+
+  <div class="q-sub">Safety cut-off on the roller?</div>
+  <div class="answer-stack" id="fg-roller">
+    <button class="answer-btn" onclick="ans('rollerCutoff','Yes',this,'yes')"><span class="a-icon">✅</span><span class="a-label">Yes – working</span><span class="a-check"></span></button>
+    <button class="answer-btn" onclick="ans('rollerCutoff','No',this,'no')"><span class="a-icon">❌</span><span class="a-label">No – not working</span><span class="a-check"></span></button>
+  </div>
+  <div class="q-sub">Safety cut-off on the mixer?</div>
+  <div class="answer-stack" id="fg-mixer">
+    <button class="answer-btn" onclick="ans('mixerCutoff','Yes',this,'yes')"><span class="a-icon">✅</span><span class="a-label">Yes – working</span><span class="a-check"></span></button>
+    <button class="answer-btn" onclick="ans('mixerCutoff','No',this,'no')"><span class="a-icon">❌</span><span class="a-label">No – not working</span><span class="a-check"></span></button>
+  </div>
+  <div class="q-sub">Valid FSS certificate?</div>
+  <div class="answer-stack" id="fg-fss">
+    <button class="answer-btn" onclick="ans('fssValid','Yes',this,'yes')"><span class="a-icon">✅</span><span class="a-label">Yes – valid</span><span class="a-check"></span></button>
+    <button class="answer-btn" onclick="ans('fssValid','No',this,'no')"><span class="a-icon">❌</span><span class="a-label">No – missing / expired</span><span class="a-check"></span></button>
+    <button class="answer-btn" onclick="ans('fssValid','N/A',this,'na')"><span class="a-icon">➖</span><span class="a-label">N/A</span><span class="a-check"></span></button>
+  </div>
+  <div class="q-sub">Sanitiser buckets with test strips?</div>
+  <div class="answer-stack" id="fg-sanit">
+    <button class="answer-btn" onclick="ans('sanitiserBuckets','Yes',this,'yes')"><span class="a-icon">✅</span><span class="a-label">Yes</span><span class="a-check"></span></button>
+    <button class="answer-btn" onclick="ans('sanitiserBuckets','No',this,'no')"><span class="a-icon">❌</span><span class="a-label">No</span><span class="a-check"></span></button>
+  </div>
+</div>
+
+<!-- ══ TEMPS 1 ══ -->
+<div class="screen" id="sc-temps1" data-sec="Food Safety">
+  <div class="q-num">FSCC · Temperature</div>
+  <div class="q-text">HutBot & calibration</div>
+
+  <div class="q-sub">HutBot completed today?</div>
+  <div class="answer-stack" id="fg-hutbot">
+    <button class="answer-btn" onclick="ans('hutBotCompleted','Yes',this,'yes')"><span class="a-icon">✅</span><span class="a-label">Yes – completed</span><span class="a-check"></span></button>
+    <button class="answer-btn" onclick="ans('hutBotCompleted','No',this,'no')"><span class="a-icon">❌</span><span class="a-label">No – not done</span><span class="a-check"></span></button>
+  </div>
+  <div class="q-sub">Ice calibration completed?</div>
+  <div class="answer-stack" id="fg-ice">
+    <button class="answer-btn" onclick="ans('iceCalibration','Yes',this,'yes');showCond('tempsCond',true);document.getElementById('iceStop').style.display='none'"><span class="a-icon">✅</span><span class="a-label">Yes – calibrated</span><span class="a-check"></span></button>
+    <button class="answer-btn" onclick="ans('iceCalibration','No',this,'no');showCond('tempsCond',false);document.getElementById('iceStop').style.display='flex'"><span class="a-icon">❌</span><span class="a-label">No – not done</span><span class="a-check"></span></button>
+  </div>
+  <div class="alert alert-stop" id="iceStop" style="display:none;"><span class="a-icon-lg">🛑</span><span>Stop – complete ice calibration before recording temperatures.</span></div>
+  <div class="cond" id="tempsCond">
+    <div class="sec-divider"></div>
+    <div class="q-hint" style="color:var(--white);font-weight:600;margin-bottom:12px;">Temperature Readings</div>
+    <div class="temp-row">
+      <div class="temp-card"><label>Cheese</label><input type="number" id="tempCheese" placeholder="0.0" step="0.1"><div class="temp-unit">°C</div></div>
+      <div class="temp-card"><label>Veggie</label><input type="number" id="tempVeggie" placeholder="0.0" step="0.1"><div class="temp-unit">°C</div></div>
+      <div class="temp-card"><label>Meat</label><input type="number" id="tempMeat" placeholder="0.0" step="0.1"><div class="temp-unit">°C</div></div>
+    </div>
+    <div class="q-hint" style="margin-bottom:8px;">Maketable Score</div>
+    <input class="mobile-input" type="number" id="maketableScore" placeholder="Score" style="margin-bottom:14px;">
+    <div class="q-sub" style="margin-top:0;">Thermometer correct vs AM's?</div>
+    <div class="answer-stack">
+      <button class="answer-btn" onclick="ans('thermCorrect','Yes',this,'yes')"><span class="a-icon">✅</span><span class="a-label">Yes – matching</span><span class="a-check"></span></button>
+      <button class="answer-btn" onclick="ans('thermCorrect','No',this,'no')"><span class="a-icon">❌</span><span class="a-label">No – discrepancy</span><span class="a-check"></span></button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TEMPS 2 ══ -->
+<div class="screen" id="sc-temps2" data-sec="Food Safety">
+  <div class="q-num">FSCC · Temperature</div>
+  <div class="q-text">Ice tray & tracking</div>
+
+  <div class="q-sub">Ice tray filled?</div>
+  <div class="answer-stack" id="fg-icetray">
+    <button class="answer-btn" onclick="ans('iceTrayFilled','Yes',this,'yes')"><span class="a-icon">✅</span><span class="a-label">Yes</span><span class="a-check"></span></button>
+    <button class="answer-btn" onclick="ans('iceTrayFilled','No',this,'no')"><span class="a-icon">❌</span><span class="a-label">No</span><span class="a-check"></span></button>
+  </div>
+  <div class="q-sub">4-hour tracking sheets in place?</div>
+  <div class="answer-stack">
+    <button class="answer-btn" onclick="ans('trackingSheets','Yes',this,'yes')"><span class="a-icon">✅</span><span class="a-label">Yes</span><span class="a-check"></span></button>
+    <button class="answer-btn" onclick="ans('trackingSheets','No',this,'no')"><span class="a-icon">❌</span><span class="a-label">No</span><span class="a-check"></span></button>
+  </div>
+  <div style="margin-top:16px;">
+    <div class="q-hint">Food safety comments <span style="color:var(--dimmer)">(optional)</span></div>
+    <textarea class="mobile-input" id="foodSafetyComments" placeholder="Any additional observations..." rows="3"></textarea>
+  </div>
+</div>
+
+<!-- ══ OVENS ══ -->
+<div class="screen" id="sc-ovens" data-sec="Ovens">
+  <div class="q-num">FSCC · Ingredients</div>
+  <div class="q-text">Ovens & ingredients</div>
+
+  <div class="q-hint">Select oven types</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:18px;">
+    <div><div style="font-size:11px;color:var(--dim);margin-bottom:6px;text-transform:uppercase;font-weight:700;">Oven 1</div>
+    <select class="mobile-input" id="oven1" style="padding:10px 12px;font-size:14px;"><option value="">—</option><option>Wow</option><option>Blodgett</option><option>XLT</option><option>Lincoln</option><option>Middleby</option><option>N/A</option><option>Other</option></select></div>
+    <div><div style="font-size:11px;color:var(--dim);margin-bottom:6px;text-transform:uppercase;font-weight:700;">Oven 2</div>
+    <select class="mobile-input" id="oven2" style="padding:10px 12px;font-size:14px;"><option value="">—</option><option>Wow</option><option>Blodgett</option><option>XLT</option><option>Lincoln</option><option>Middleby</option><option>N/A</option><option>Other</option></select></div>
+    <div><div style="font-size:11px;color:var(--dim);margin-bottom:6px;text-transform:uppercase;font-weight:700;">Oven 3</div>
+    <select class="mobile-input" id="oven3" style="padding:10px 12px;font-size:14px;"><option value="">—</option><option>Wow</option><option>Blodgett</option><option>XLT</option><option>Lincoln</option><option>Middleby</option><option>N/A</option><option>Other</option></select></div>
+  </div>
+
+  <div class="q-sub" style="margin-top:0;">Oven exhaust built in?</div>
+  <div class="answer-stack" id="fg-exhaust" style="margin-bottom:18px;">
+    <button class="answer-btn" onclick="ans('ovenExhaust','Yes',this,'yes')"><span class="a-icon">✅</span><span class="a-label">Yes</span><span class="a-check"></span></button>
+    <button class="answer-btn" onclick="ans('ovenExhaust','No',this,'no')"><span class="a-icon">❌</span><span class="a-label">No</span><span class="a-check"></span></button>
+  </div>
+
+  <div class="q-sub">Everything dated and in date?</div>
+  <div style="background:rgba(227,24,55,.08);border:1px solid rgba(227,24,55,.2);border-radius:10px;padding:8px 12px;margin-bottom:10px;font-size:12px;color:#ff7090;font-weight:600;">⚠️ Critical check — worth 8 points</div>
+  <div class="answer-stack" id="fg-indate">
+    <button class="answer-btn" onclick="ans('everythingInDate','Yes',this,'yes');showCond('expiredCond',false)"><span class="a-icon">✅</span><span class="a-label">Yes – all in date</span><span class="a-check"></span></button>
+    <button class="answer-btn" onclick="ans('everythingInDate','No',this,'no');showCond('expiredCond',true)"><span class="a-icon">❌</span><span class="a-label">No – expired items found</span><span class="a-check"></span></button>
+  </div>
+  <div class="cond" id="expiredCond">
+    <div style="margin-top:12px;">
+      <div class="q-hint" style="margin-bottom:8px;">What ingredients have expired?</div>
+      <textarea class="mobile-input" id="expiredIngredients" placeholder="List expired ingredients..." rows="3"></textarea>
+    </div>
+    <div style="margin-top:10px;">
+      <div class="q-hint" style="margin-bottom:8px;">Expiring COB today?</div>
+      <textarea class="mobile-input" id="expiringToday" placeholder="List items expiring today..." rows="2"></textarea>
+    </div>
+    <div class="photo-grid">
+      <div class="photo-tile" id="pt-exp"><input type="file" accept="image/*" capture="environment" onchange="capturePhoto(this,'pt-exp','PhotoExpired')"><div class="pt-icon">⚠️</div><div class="pt-label">Expired Items</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ DOUGH (SHARED) ══ -->
+<div class="screen" id="sc-dough" data-sec="Dough">
+  <div class="q-num" id="doughQNum">Step 7 · Dough Quality</div>
+  <div class="q-text">Storage & standards</div>
+
+  <div class="q-sub">Dough stored to standard?</div>
+  <div class="answer-stack" id="fg-dstorage">
+    <button class="answer-btn" onclick="ans('doughStorage','Yes',this,'yes');showCond('dsiCond',false)"><span class="a-icon">✅</span><span class="a-label">Yes</span><span class="a-check"></span></button>
+    <button class="answer-btn" onclick="ans('doughStorage','No',this,'no');showCond('dsiCond',true)"><span class="a-icon">❌</span><span class="a-label">No – issues found</span><span class="a-check"></span></button>
+  </div>
+  <div class="cond" id="dsiCond">
+    <div class="chip-grid" style="margin-top:10px;">
+      <div class="chip" onclick="toggleChip(this)">Weights missing</div>
+      <div class="chip" onclick="toggleChip(this)">Wrong height</div>
+      <div class="chip" onclick="toggleChip(this)">Other</div>
+    </div>
+  </div>
+
+  <div class="q-sub">All dough dated & within shelf life?</div>
+  <div class="answer-stack" id="fg-ddated">
+    <button class="answer-btn" onclick="ans('doughDated','Yes',this,'yes');showCond('ddiCond',false)"><span class="a-icon">✅</span><span class="a-label">Yes</span><span class="a-check"></span></button>
+    <button class="answer-btn" onclick="ans('doughDated','No',this,'no');showCond('ddiCond',true)"><span class="a-icon">❌</span><span class="a-label">No</span><span class="a-check"></span></button>
+  </div>
+  <div class="cond" id="ddiCond">
+    <div class="chip-grid" style="margin-top:10px;">
+      <div class="chip" onclick="toggleChip(this)">Expired dough</div>
+      <div class="chip" onclick="toggleChip(this)">Undated dough</div>
+      <div class="chip" onclick="toggleChip(this)">Other</div>
+    </div>
+  </div>
+
+  <div class="q-sub">Dough meets quality standards?</div>
+  <div class="answer-stack" id="fg-dquality">
+    <button class="answer-btn" onclick="ans('doughQuality','Yes',this,'yes');showCond('dqiCond',false)"><span class="a-icon">✅</span><span class="a-label">Yes</span><span class="a-check"></span></button>
+    <button class="answer-btn" onclick="ans('doughQuality','No',this,'no');showCond('dqiCond',true)"><span class="a-icon">❌</span><span class="a-label">No</span><span class="a-check"></span></button>
+  </div>
+  <div class="cond" id="dqiCond">
+    <div class="chip-grid" style="margin-top:10px;">
+      <div class="chip" onclick="toggleChip(this)">Overproofed</div>
+      <div class="chip" onclick="toggleChip(this)">Underproofed</div>
+      <div class="chip" onclick="toggleChip(this)">Dry spots</div>
+      <div class="chip" onclick="toggleChip(this)">Pan crust oiled</div>
+      <div class="chip" onclick="toggleChip(this)">Other</div>
+    </div>
+  </div>
+
+  <div style="margin-top:16px;">
+    <div class="q-hint">Dough comments <span style="color:var(--dimmer)">(optional)</span></div>
+    <textarea class="mobile-input" id="doughComments" placeholder="Additional dough observations..." rows="3"></textarea>
+  </div>
+  <div class="photo-grid">
+    <div class="photo-tile" id="pt-d1"><input type="file" accept="image/*" capture="environment" onchange="capturePhoto(this,'pt-d1','PhotoDough1')"><div class="pt-icon">🫓</div><div class="pt-label">Storage</div></div>
+    <div class="photo-tile" id="pt-d2"><input type="file" accept="image/*" capture="environment" onchange="capturePhoto(this,'pt-d2','PhotoDough2')"><div class="pt-icon">📏</div><div class="pt-label">Quality</div></div>
+  </div>
+</div>
+
+<!-- ══ PIZZA (SHARED) ══ -->
+<div class="screen" id="sc-pizza" data-sec="Pizza">
+  <div class="q-num" id="pizzaQNum">Step 8 · Product Quality</div>
+  <div class="q-text">Does the pizza meet our standards?</div>
+
+  <div class="answer-stack" id="fg-pizza">
+    <button class="answer-btn" onclick="ans('pizzaMeetsStandard','Yes',this,'yes');showCond('pizzaCond',false)"><span class="a-icon">✅</span><span class="a-label">Yes – meets standards</span><span class="a-check"></span></button>
+    <button class="answer-btn" onclick="ans('pizzaMeetsStandard','No',this,'no');showCond('pizzaCond',true)"><span class="a-icon">❌</span><span class="a-label">No – issues found</span><span class="a-check"></span></button>
+  </div>
+  <div class="cond" id="pizzaCond">
+    <div class="q-hint" style="margin-top:12px;margin-bottom:10px;color:var(--white);font-weight:600;">What were the issues?</div>
+    <div class="chip-grid" id="pizzaChips">
+      <div class="chip" onclick="toggleChip(this)">Oven settings</div>
+      <div class="chip" onclick="toggleChip(this)">Center temp low</div>
+      <div class="chip" onclick="toggleChip(this)">Crust overcooked</div>
+      <div class="chip" onclick="toggleChip(this)">Crust undercooked</div>
+      <div class="chip" onclick="toggleChip(this)">Cheese overcooked</div>
+      <div class="chip" onclick="toggleChip(this)">Cheese undercooked</div>
+      <div class="chip" onclick="toggleChip(this)">Poor topping spread</div>
+      <div class="chip" onclick="toggleChip(this)">Bottom pattern poor</div>
+      <div class="chip" onclick="toggleChip(this)">Slice profile wrong</div>
+      <div class="chip" onclick="toggleChip(this)">Other</div>
+    </div>
+  </div>
+  <div class="photo-grid-3" style="margin-top:18px;">
+    <div class="photo-tile" id="pt-p1"><input type="file" accept="image/*" capture="environment" onchange="capturePhoto(this,'pt-p1','PhotoPizza1')"><div class="pt-icon">🍕</div><div class="pt-label">Top View</div></div>
+    <div class="photo-tile" id="pt-p2"><input type="file" accept="image/*" capture="environment" onchange="capturePhoto(this,'pt-p2','PhotoPizza2')"><div class="pt-icon">🔪</div><div class="pt-label">Slice</div></div>
+    <div class="photo-tile" id="pt-p3"><input type="file" accept="image/*" capture="environment" onchange="capturePhoto(this,'pt-p3','PhotoPizza3')"><div class="pt-icon">⬇️</div><div class="pt-label">Bottom</div></div>
+  </div>
+</div>
+
+<!-- ══ PEAK: TEAM ══ -->
+<div class="screen" id="sc-peak-team" data-sec="Peak Visit">
+  <div class="q-num">Peak Visit · Team</div>
+  <div class="q-text">Team compliance</div>
+  <div class="alert alert-warn"><span class="a-icon-lg">⚡</span><span>Peak Visit — team, dough & pizza checks only</span></div>
+
+  <div class="q-sub">Certified manager on duty?</div>
+  <div class="answer-stack" id="fg-certmgr-peak">
+    <button class="answer-btn" onclick="ans('certifiedManager','Yes',this,'yes')"><span class="a-icon">✅</span><span class="a-label">Yes</span><span class="a-check"></span></button>
+    <button class="answer-btn" onclick="ans('certifiedManager','No',this,'no')"><span class="a-icon">❌</span><span class="a-label">No</span><span class="a-check"></span></button>
+  </div>
+  <div class="q-sub">Everyone in uniform and hat?</div>
+  <div class="answer-stack" id="fg-uni-peak">
+    <button class="answer-btn" onclick="ans('uniformCompliant','Yes',this,'yes');F.hatCompliant='Yes'"><span class="a-icon">✅</span><span class="a-label">Yes – fully compliant</span><span class="a-check"></span></button>
+    <button class="answer-btn" onclick="ans('uniformCompliant','No',this,'no')"><span class="a-icon">❌</span><span class="a-label">No – issues found</span><span class="a-check"></span></button>
+  </div>
+  <div class="q-sub">Deployment plan on display?</div>
+  <div class="answer-stack" id="fg-deploy-peak">
+    <button class="answer-btn" onclick="ans('deploymentPlan','Yes',this,'yes')"><span class="a-icon">✅</span><span class="a-label">Yes</span><span class="a-check"></span></button>
+    <button class="answer-btn" onclick="ans('deploymentPlan','No',this,'no')"><span class="a-icon">❌</span><span class="a-label">No</span><span class="a-check"></span></button>
+    <button class="answer-btn" onclick="ans('deploymentPlan','N/A',this,'na')"><span class="a-icon">➖</span><span class="a-label">N/A</span><span class="a-check"></span></button>
+  </div>
+</div>
+
+<!-- ══ PEST ══ -->
+<div class="screen" id="sc-pest" data-sec="Food Safety">
+  <div class="q-num">FSCC · Pest Control</div>
+  <div class="q-text">Pest control check</div>
+  <div style="background:rgba(227,24,55,.08);border:1px solid rgba(227,24,55,.2);border-radius:10px;padding:8px 12px;margin-bottom:14px;font-size:12px;color:#ff7090;font-weight:600;">⚠️ Critical check — pest activity worth 8 points</div>
+
+  <div class="q-hint">Last pest control service date</div>
+  <div class="field-group" id="fg-pest">
+    <input class="mobile-input" type="date" id="lastPestVisit" onchange="checkPest()">
+    <div class="field-err">Required</div>
+  </div>
+  <div class="alert alert-stop" id="pestStop" style="display:none;"><span class="a-icon-lg">🛑</span><span>Overdue — more than 90 days since last service. Escalate immediately.</span></div>
+
+  <div class="q-sub">Any pest activity noted?</div>
+  <div class="answer-stack" id="fg-pestact">
+    <button class="answer-btn" onclick="ans('pestActivity','Yes',this,'no');showCond('pestCond',true)"><span class="a-icon">⚠️</span><span class="a-label">Yes – activity found</span><span class="a-check"></span></button>
+    <button class="answer-btn" onclick="ans('pestActivity','No',this,'yes');showCond('pestCond',false)"><span class="a-icon">✅</span><span class="a-label">No – all clear</span><span class="a-check"></span></button>
+  </div>
+  <div class="cond" id="pestCond">
+    <div style="margin-top:12px;">
+      <div class="q-hint" style="margin-bottom:8px;">Describe locations and type of pest</div>
+      <textarea class="mobile-input" id="pestLocations" placeholder="Location, type, severity..." rows="3"></textarea>
+    </div>
+    <div class="photo-grid">
+      <div class="photo-tile" id="pt-pest"><input type="file" accept="image/*" capture="environment" onchange="capturePhoto(this,'pt-pest','PhotoPest')"><div class="pt-icon">📍</div><div class="pt-label">Pest Location</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ FOYER ══ -->
+<div class="screen" id="sc-foyer" data-sec="Brand Standard">
+  <div class="q-num">Brand Standard · Foyer</div>
+  <div class="q-text">Store front & presentation</div>
+
+  <div class="q-sub">Clean and inviting?</div>
+  <div class="answer-stack" id="fg-clean" style="margin-bottom:18px;">
+    <button class="answer-btn" onclick="ans('foyerClean','Yes',this,'yes')"><span class="a-icon">✅</span><span class="a-label">Yes</span><span class="a-check"></span></button>
+    <button class="answer-btn" onclick="ans('foyerClean','No',this,'no')"><span class="a-icon">❌</span><span class="a-label">No</span><span class="a-check"></span></button>
+  </div>
+  <div class="q-sub">All lights on and working?</div>
+  <div class="answer-stack" id="fg-lights" style="margin-bottom:18px;">
+    <button class="answer-btn" onclick="ans('foyerLights','Yes',this,'yes')"><span class="a-icon">✅</span><span class="a-label">Yes</span><span class="a-check"></span></button>
+    <button class="answer-btn" onclick="ans('foyerLights','No',this,'no')"><span class="a-icon">❌</span><span class="a-label">No</span><span class="a-check"></span></button>
+  </div>
+  <div class="q-sub">Open sign on?</div>
+  <div class="answer-stack" id="fg-sign" style="margin-bottom:18px;">
+    <button class="answer-btn" onclick="ans('openSign','Yes',this,'yes')"><span class="a-icon">✅</span><span class="a-label">Yes</span><span class="a-check"></span></button>
+    <button class="answer-btn" onclick="ans('openSign','No',this,'no')"><span class="a-icon">❌</span><span class="a-label">No</span><span class="a-check"></span></button>
+    <button class="answer-btn" onclick="ans('openSign','N/A',this,'na')"><span class="a-icon">➖</span><span class="a-label">N/A</span><span class="a-check"></span></button>
+  </div>
+  <div class="q-sub">Menu updated and displaying correctly?</div>
+  <div class="answer-stack" id="fg-menu" style="margin-bottom:18px;">
+    <button class="answer-btn" onclick="ans('menuUpdated','Yes',this,'yes')"><span class="a-icon">✅</span><span class="a-label">Yes</span><span class="a-check"></span></button>
+    <button class="answer-btn" onclick="ans('menuUpdated','No',this,'no')"><span class="a-icon">❌</span><span class="a-label">No</span><span class="a-check"></span></button>
+  </div>
+  <div class="q-hint">Areas needing improvement <span style="color:var(--dimmer)">(optional)</span></div>
+  <textarea class="mobile-input" id="foyerWorkNeeded" placeholder="Describe areas..." rows="3" style="margin-bottom:16px;"></textarea>
+  <div class="photo-grid">
+    <div class="photo-tile" id="pt-f1"><input type="file" accept="image/*" capture="environment" onchange="capturePhoto(this,'pt-f1','PhotoFoyer1')"><div class="pt-icon">🚪</div><div class="pt-label">Entrance</div></div>
+    <div class="photo-tile" id="pt-f2"><input type="file" accept="image/*" capture="environment" onchange="capturePhoto(this,'pt-f2','PhotoFoyer2')"><div class="pt-icon">📋</div><div class="pt-label">Menu Board</div></div>
+  </div>
+</div>
+
+<!-- ══ TEAM (STRUCTURED) ══ -->
+<div class="screen" id="sc-team" data-sec="Brand Standard">
+  <div class="q-num">Brand Standard · Team</div>
+  <div class="q-text">People & compliance</div>
+
+  <div class="q-sub">Store can log onto Donesafe?</div>
+  <div class="answer-stack" id="fg-done" style="margin-bottom:6px;">
+    <button class="answer-btn" onclick="ans('donesafeAccess','Yes',this,'yes');document.getElementById('doneStop').style.display='none'"><span class="a-icon">✅</span><span class="a-label">Yes</span><span class="a-check"></span></button>
+    <button class="answer-btn" onclick="ans('donesafeAccess','No',this,'no');document.getElementById('doneStop').style.display='flex'"><span class="a-icon">❌</span><span class="a-label">No</span><span class="a-check"></span></button>
+  </div>
+  <div class="alert alert-stop" id="doneStop" style="display:none;"><span class="a-icon-lg">🛑</span><span>Log a support ticket to restore Donesafe access before leaving.</span></div>
+
+  <div class="q-sub">Any open customer complaints?</div>
+  <div class="answer-stack" id="fg-comp" style="margin-bottom:6px;">
+    <button class="answer-btn" onclick="ans('openComplaints','Yes',this,'no');document.getElementById('compStop').style.display='flex';document.getElementById('compOk').style.display='none'"><span class="a-icon">⚠️</span><span class="a-label">Yes – open complaints</span><span class="a-check"></span></button>
+    <button class="answer-btn" onclick="ans('openComplaints','No',this,'yes');document.getElementById('compOk').style.display='flex';document.getElementById('compStop').style.display='none'"><span class="a-icon">✅</span><span class="a-label">No – all clear</span><span class="a-check"></span></button>
+  </div>
+  <div class="alert alert-stop" id="compStop" style="display:none;"><span class="a-icon-lg">🛑</span><span>Stop – resolve all open complaints before leaving store.</span></div>
+  <div class="alert alert-ok" id="compOk" style="display:none;"><span class="a-icon-lg">✅</span><span>Well done – no open complaints!</span></div>
+
+  <div class="q-sub">Certified manager on duty?</div>
+  <div class="answer-stack" id="fg-certmgr" style="margin-bottom:18px;">
+    <button class="answer-btn" onclick="ans('certifiedManager','Yes',this,'yes')"><span class="a-icon">✅</span><span class="a-label">Yes</span><span class="a-check"></span></button>
+    <button class="answer-btn" onclick="ans('certifiedManager','No',this,'no')"><span class="a-icon">❌</span><span class="a-label">No</span><span class="a-check"></span></button>
+  </div>
+  <div class="q-sub">Everyone in uniform and hat?</div>
+  <div class="answer-stack" id="fg-uni" style="margin-bottom:18px;">
+    <button class="answer-btn" onclick="ans('uniformCompliant','Yes',this,'yes');F.hatCompliant='Yes'"><span class="a-icon">✅</span><span class="a-label">Yes – fully compliant</span><span class="a-check"></span></button>
+    <button class="answer-btn" onclick="ans('uniformCompliant','No',this,'no')"><span class="a-icon">❌</span><span class="a-label">No – issues found</span><span class="a-check"></span></button>
+  </div>
+  <div class="q-sub">Deployment plan on display?</div>
+  <div class="answer-stack" id="fg-deploy" style="margin-bottom:18px;">
+    <button class="answer-btn" onclick="ans('deploymentPlan','Yes',this,'yes')"><span class="a-icon">✅</span><span class="a-label">Yes</span><span class="a-check"></span></button>
+    <button class="answer-btn" onclick="ans('deploymentPlan','No',this,'no')"><span class="a-icon">❌</span><span class="a-label">No</span><span class="a-check"></span></button>
+    <button class="answer-btn" onclick="ans('deploymentPlan','N/A',this,'na')"><span class="a-icon">➖</span><span class="a-label">N/A</span><span class="a-check"></span></button>
+  </div>
+  <div class="q-hint">General comments <span style="color:var(--dimmer)">(optional)</span></div>
+  <textarea class="mobile-input" id="generalComments" placeholder="Any other observations..." rows="3" style="margin-bottom:16px;"></textarea>
+  <div class="photo-grid">
+    <div class="photo-tile" id="pt-g1"><input type="file" accept="image/*" capture="environment" onchange="capturePhoto(this,'pt-g1','PhotoGeneral1')"><div class="pt-icon">🏪</div><div class="pt-label">Store Overview</div></div>
+    <div class="photo-tile" id="pt-g2"><input type="file" accept="image/*" capture="environment" onchange="capturePhoto(this,'pt-g2','PhotoGeneral2')"><div class="pt-icon">👥</div><div class="pt-label">Team</div></div>
+  </div>
+</div>
+
+<!-- ══ BUSINESS REVIEW ══ -->
+<div class="screen" id="sc-br-meeting" data-sec="Business Review">
+  <div class="q-num">Business Review · Meeting Details</div>
+  <div class="q-text">Meeting information</div>
+
+  <div class="q-hint">Location / venue</div>
+  <input class="mobile-input" type="text" id="brLocation" placeholder="e.g. Store, Head Office, Teams" style="margin-bottom:14px;" autocomplete="off">
+
+  <div class="q-hint">Attendees</div>
+  <textarea class="mobile-input" id="brAttendees" placeholder="List all attendees..." rows="3" style="margin-bottom:14px;"></textarea>
+
+  <div class="sec-divider"></div>
+  <div class="q-sub" style="margin-top:0;">Sales Performance</div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+    <div>
+      <div class="q-hint" style="margin-bottom:6px;font-size:11px;">SSS Growth %</div>
+      <input class="mobile-input" type="number" id="brSSS" placeholder="e.g. 3.2" step="0.1" style="padding:11px 14px;">
+    </div>
+    <div>
+      <div class="q-hint" style="margin-bottom:6px;font-size:11px;">Delivery %</div>
+      <input class="mobile-input" type="number" id="brDelivery" placeholder="e.g. 42" step="0.1" style="padding:11px 14px;">
+    </div>
+    <div>
+      <div class="q-hint" style="margin-bottom:6px;font-size:11px;">ACE Score</div>
+      <input class="mobile-input" type="number" id="brACE" placeholder="Score" style="padding:11px 14px;">
+    </div>
+    <div>
+      <div class="q-hint" style="margin-bottom:6px;font-size:11px;">WINSCORE</div>
+      <input class="mobile-input" type="number" id="brWINSCORE" placeholder="Score" step="0.1" style="padding:11px 14px;">
+    </div>
+  </div>
+</div>
+
+<div class="screen" id="sc-br-points" data-sec="Business Review">
+  <div class="q-num">Business Review · Discussion</div>
+  <div class="q-text">Points discussed</div>
+
+  <div class="q-hint" style="margin-bottom:10px;">Topics covered</div>
+  <div class="chip-grid" id="brTopicChips" style="margin-bottom:16px;">
+    <div class="chip" onclick="toggleChip(this)">Operations</div>
+    <div class="chip" onclick="toggleChip(this)">People & Training</div>
+    <div class="chip" onclick="toggleChip(this)">Marketing</div>
+    <div class="chip" onclick="toggleChip(this)">Financial</div>
+    <div class="chip" onclick="toggleChip(this)">Compliance</div>
+    <div class="chip" onclick="toggleChip(this)">Customer Experience</div>
+    <div class="chip" onclick="toggleChip(this)">Facilities</div>
+    <div class="chip" onclick="toggleChip(this)">Technology</div>
+  </div>
+
+  <div class="q-hint" style="margin-bottom:8px;">Discussion notes</div>
+  <textarea class="mobile-input" id="brDiscussion" placeholder="Key points discussed..." rows="4" style="margin-bottom:14px;"></textarea>
+
+  <div class="q-hint" style="margin-bottom:8px;">Franchisee concerns raised</div>
+  <textarea class="mobile-input" id="brConcerns" placeholder="Any concerns raised by the franchisee..." rows="3"></textarea>
+</div>
+
+<div class="screen" id="sc-br-actions" data-sec="Business Review">
+  <div class="q-num">Business Review · Commitments</div>
+  <div class="q-text">Action items & follow-up</div>
+
+  <div class="q-hint" style="margin-bottom:14px;">Record commitments made during the meeting</div>
+
+  <div class="action-item">
+    <div class="action-num">Action 1</div>
+    <input class="mobile-input" type="text" id="br-a1-desc" placeholder="Action description..." style="margin-bottom:8px;" autocomplete="off">
+    <div class="action-row">
+      <input class="mobile-input" type="text" id="br-a1-owner" placeholder="Owner" style="padding:10px 12px;" autocomplete="off">
+      <input class="mobile-input" type="date" id="br-a1-due" style="padding:10px 12px;">
+    </div>
+  </div>
+  <div class="action-item">
+    <div class="action-num">Action 2</div>
+    <input class="mobile-input" type="text" id="br-a2-desc" placeholder="Action description..." style="margin-bottom:8px;" autocomplete="off">
+    <div class="action-row">
+      <input class="mobile-input" type="text" id="br-a2-owner" placeholder="Owner" style="padding:10px 12px;" autocomplete="off">
+      <input class="mobile-input" type="date" id="br-a2-due" style="padding:10px 12px;">
+    </div>
+  </div>
+  <div class="action-item">
+    <div class="action-num">Action 3</div>
+    <input class="mobile-input" type="text" id="br-a3-desc" placeholder="Action description..." style="margin-bottom:8px;" autocomplete="off">
+    <div class="action-row">
+      <input class="mobile-input" type="text" id="br-a3-owner" placeholder="Owner" style="padding:10px 12px;" autocomplete="off">
+      <input class="mobile-input" type="date" id="br-a3-due" style="padding:10px 12px;">
+    </div>
+  </div>
+  <div class="action-item">
+    <div class="action-num">Action 4</div>
+    <input class="mobile-input" type="text" id="br-a4-desc" placeholder="Action description..." style="margin-bottom:8px;" autocomplete="off">
+    <div class="action-row">
+      <input class="mobile-input" type="text" id="br-a4-owner" placeholder="Owner" style="padding:10px 12px;" autocomplete="off">
+      <input class="mobile-input" type="date" id="br-a4-due" style="padding:10px 12px;">
+    </div>
+  </div>
+  <div class="action-item">
+    <div class="action-num">Action 5</div>
+    <input class="mobile-input" type="text" id="br-a5-desc" placeholder="Action description..." style="margin-bottom:8px;" autocomplete="off">
+    <div class="action-row">
+      <input class="mobile-input" type="text" id="br-a5-owner" placeholder="Owner" style="padding:10px 12px;" autocomplete="off">
+      <input class="mobile-input" type="date" id="br-a5-due" style="padding:10px 12px;">
+    </div>
+  </div>
+</div>
+
+<div class="screen" id="sc-br-engagement" data-sec="Business Review">
+  <div class="q-num">Business Review · Wrap Up</div>
+  <div class="q-text">Franchisee engagement & next steps</div>
+
+  <div class="q-sub" style="margin-top:0;">Franchisee engagement level</div>
+  <div class="q-hint" style="margin-bottom:12px;">How engaged was the franchisee in this review?</div>
+  <div class="engagement-grid" id="engagementGrid">
+    <div class="eng-btn" onclick="setEngagement(1,this)"><div class="eng-num">1</div><div class="eng-label">Poor</div></div>
+    <div class="eng-btn" onclick="setEngagement(2,this)"><div class="eng-num">2</div><div class="eng-label">Developing</div></div>
+    <div class="eng-btn" onclick="setEngagement(3,this)"><div class="eng-num">3</div><div class="eng-label">Engaged</div></div>
+    <div class="eng-btn" onclick="setEngagement(4,this)"><div class="eng-num">4</div><div class="eng-label">Strong</div></div>
+    <div class="eng-btn" onclick="setEngagement(5,this)"><div class="eng-num">5</div><div class="eng-label">Exceptional</div></div>
+  </div>
+  <div id="engagementLabel" style="text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;color:var(--red);margin-top:10px;min-height:28px;"></div>
+
+  <div class="sec-divider"></div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+    <div>
+      <div class="q-hint" style="margin-bottom:8px;font-size:12px;">Follow-up Date</div>
+      <input class="mobile-input" type="date" id="brFollowUp" style="padding:11px 14px;">
+    </div>
+    <div>
+      <div class="q-hint" style="margin-bottom:8px;font-size:12px;">Next Meeting Date</div>
+      <input class="mobile-input" type="date" id="brNextMeeting" style="padding:11px 14px;">
+    </div>
+  </div>
+
+  <div class="q-hint" style="margin-bottom:8px;">Additional notes</div>
+  <textarea class="mobile-input" id="brNotes" placeholder="Any other notes from the review..." rows="3"></textarea>
+</div>
+
+<!-- ══ SUMMARY ══ -->
+<div class="screen" id="sc-summary" data-sec="Submit">
+  <div id="summaryContent"></div>
+</div>
+
+<!-- ══ RECENT VISITS ══ -->
+<div class="screen" id="sc-recent" data-sec="My Visits">
+  <div class="q-num">My Recent Visits</div>
+  <div class="q-text" style="font-size:28px;margin-bottom:16px;">Last 5 submissions</div>
+  <div id="recentList"><div style="color:var(--dim);font-size:14px;text-align:center;padding:40px 0;">Loading...</div></div>
+  <button class="btn-full btn-ghost" onclick="goTo('sc-splash')" style="margin-top:16px;">← Back to Home</button>
+</div>
+
+<!-- ══ SUCCESS ══ -->
+<div class="screen" id="sc-success" data-sec="Done">
+  <div class="s-ring">✅</div>
+  <div class="s-title">Submitted!</div>
+  <p class="s-sub">Visit saved to SharePoint and report generated.</p>
+  <div class="s-ref"><strong id="successRef">—</strong>Submission Reference</div>
+  <div class="s-btns">
+    <button class="btn-full btn-red" onclick="downloadPDF()">📄 Download PDF Report</button>
+    <button class="btn-full btn-ghost" onclick="viewRecent()">📋 My Recent Visits</button>
+    <button class="btn-full btn-ghost" onclick="resetForm()">+ Start New Visit</button>
+  </div>
+</div>
+
+</div><!-- /screens -->
+
+<div class="bottom-nav" id="bottomNav" style="display:none;">
+  <button class="btn-back" id="backBtn" onclick="goBack()">←</button>
+  <button class="btn-next" id="nextBtn" onclick="goNext()">Continue →</button>
+</div>
+
+</div><!-- /app -->
+
+<div class="overlay" id="overlay">
+  <div class="overlay-card">
+    <div class="spinner"></div>
+    <div class="ov-title" id="ovTitle">Processing</div>
+    <p class="ov-msg" id="ovMsg">Please wait...</p>
+  </div>
+</div>
+
+<script>
+// ══ CONFIG ══
+const CONFIG = {
+  siteUrl:'https://kdai42.sharepoint.com/sites/StoreSmart',
+  listName:'StoreVisits',
+  photoLibrary:'StoreVisitPhotos',
+  adminEmail:'kevalkumar.darji@flynnanz.com',
+  hutbotUrl:'https://apps.apple.com/au/app/hutbot/id1482629261'
+};
+
+// ══ AM DATA ══
+const AM_EMAILS={"Abhishek Stephen":"abhishek.stephen@flynnanz.com","Alex Woolfenden":"alex.woolfenden@flynnanz.com","Daniel Diau":"daniel.diau@flynnanz.com","Darren Macclure":"darren.macclure@flynnanz.com","Jason Yang":"jason.yang@flynnanz.com","Jonathan Reed":"jonathan.reed@flynnanz.com","Joshua Coxen":"joshua.coxen@flynnanz.com","Jowin Bullecer":"jowin.bullecer@flynnanz.com","Kellie Patane":"kellie.patane@flynnanz.com","Kevalkumar Darji":"kevalkumar.darji@flynnanz.com","Li, Ying (Sophie)":"ying.li@flynnanz.com","Mohab Maggar":"mohab.maggar@flynnanz.com","Nathan Lim":"nathan.lim@flynnanz.com","Pheng Toeng":"pheng.toeng@flynnanz.com","Rahul Patel":"rahul.patel@flynnanz.com","Rhys Healey":"rhys.healey@flynnanz.com","Ronnie Sehmi":"ronnie.sehmi@flynnanz.com","Sebastian Bivona":"sebastian.bivona@flynnanz.com","Thomas Phillips":"thomas.phillips@flynnanz.com","Yasmin Mays":"yasmin.mays@flynnanz.com"};
+const AM_STATE={"Abhishek Stephen":"SA/NT","Alex Woolfenden":"NSW","Daniel Diau":"VIC","Darren Macclure":"NSW","Jason Yang":"QLD","Jonathan Reed":"VIC","Joshua Coxen":"QLD","Jowin Bullecer":"WA","Kellie Patane":"QLD","Kevalkumar Darji":"NSW","Li, Ying (Sophie)":"VIC","Mohab Maggar":"NSW","Nathan Lim":"QLD","Pheng Toeng":"NSW","Rahul Patel":"VIC","Rhys Healey":"QLD","Ronnie Sehmi":"QLD","Sebastian Bivona":"NSW","Thomas Phillips":"WA","Yasmin Mays":"QLD"};
+const AM_RD={"Abhishek Stephen":"Darron Richardson","Alex Woolfenden":"Nitin Mittal","Daniel Diau":"Nitin Mittal","Darren Macclure":"Nitin Mittal","Jason Yang":"Will Campbell","Jonathan Reed":"Nitin Mittal","Joshua Coxen":"Will Campbell","Jowin Bullecer":"Darron Richardson","Kellie Patane":"Will Campbell","Kevalkumar Darji":"Nitin Mittal","Li, Ying (Sophie)":"Nitin Mittal","Mohab Maggar":"Nitin Mittal","Nathan Lim":"Will Campbell","Pheng Toeng":"Nitin Mittal","Rahul Patel":"Nitin Mittal","Rhys Healey":"Will Campbell","Ronnie Sehmi":"Will Campbell","Sebastian Bivona":"Nitin Mittal","Thomas Phillips":"Darron Richardson","Yasmin Mays":"Will Campbell"};
+const RD_EMAILS={"Darron Richardson":"darron.richardson@flynnanz.com","Nitin Mittal":"nitin.mittal@flynnanz.com","Will Campbell":"will.campbell@flynnanz.com"};
+
+// ══ AM-SPECIFIC STORES ══
+const AM_STORES={"Abhishek Stephen":["Alice Springs","Coolalinga","Gawler","Hollywood Plaza","Mile End","Munno Para","Murray Bridge","Palmerston","Para Vista","Plympton","Port Augusta","Semaphore","Whyalla"],"Jowin Bullecer":["Albany","Balga","Ballajura","Bassendean","Clarkson","Ellenbrook","High Wycombe","Innaloo","Joondalup","Swan View","Tuart Hill","Wanneroo","Woodvale"],"Thomas Phillips":["Armadale","Belmont","Bunbury","Busselton","Byford","Canning Vale","Geraldton","Harvest Lakes","Kwinana","Morley","Perth","Riverton","South Lake","Spearwood","Thornlie"],"Alex Woolfenden":["Bankstown","Camden","Campbelltown","Dapto","Fairy Meadow","Ingleburn Sd","Liverpool","Menai","Minto Delco","Miranda","Moorebank","Narellan Sd","Nowra","Revesby","Riverwood","Shellharbour","St Helens Park","Sutherland","Warrawong"],"Daniel Diau":["Bentleigh","Carrum Downs","Cranbourne","Croydon North","Dandenong","Doncaster East","Ferntree Gully","Knox","Narre Warren","North Balwyn","Oakleigh","Pakenham","Parkmore","Patterson Lakes","Ringwood","Springvale"],"Darren Macclure":["Armidale","Bateau Bay","Budgewoi","Cessnock","Coffs Harbour","East Maitland","Grafton","Gunnedah","Jesmond","Lakehaven","Nambucca","Newcastle","Port Macquarie","Rutherford","Singleton","Tamworth","Toronto","Turramurra","Umina","Wyoming","Wyong"],"Jonathan Reed":["Niddrie","Prahran","South Melbourne","St Kilda"],"Kevalkumar Darji":["Emerald Hills","Frenchs Forest","Hornsby","Marsden Park Fcd","Minto Rest","Minto Sd","North Sydney","Parramatta","Potts Point","Rouse Hill","Stanmore","Surry Hills","Waterloo Fcd","West Pennant Hills","Windsor"],"Li, Ying (Sophie)":["Altona North","Bell Post Hill","Belmont Village","Bundoora","Burwood","Collingwood","Flemington","Footscray","Keilor","Mill Park","Newcomb","Reservoir","Roxburgh Park","St Kilda","Sunshine West"],"Mohab Maggar":["Bathurst","Blacktown","Bonnyrigg","Cambridge Gardens","Doonside","Dubbo","Emerton","Emu Plains","Fairfield","Glenwood Park","Lithgow","Lurnea","Merrylands Fcd","Orange","Penrith","St Johns Park","St Marys","Wentworthville","West Hoxton Park"],"Pheng Toeng":["Baulkham Hills","Blacktown Exp","Campbell","Canley Vale","Castle Hill","Castle Hill Exp","Chester Hill","Erindale","Goulburn","Griffith","Guildford","Gungahlin","Jerrabomberra","Kippax","Mittagong","Mount Druitt","North Strathfield","Seven Hills","Wagga Wagga"],"Rahul Patel":["Ballarat","Bendigo","Caroline Springs","Craigieburn","Deer Park","Docklands","Golden Point","Howrah","Kings Meadows","Melton","Mildura","Mowbray","New Town Rbd","Point Cook","Shepparton","Sunbury","Tarneit","Werribee"],"Sebastian Bivona":["Balgowlah","Belfield","Beverly Hills","Carlingford","Collaroy","Earlwood","Eastwood","Kogarah","Maroubra","Marrickville","Mascot","Mortdale","Newport","Randwick","Ryde","Willoughby"],"Jason Yang":["Ashmore","Boonooroo Park","Broadbeach","Burleigh Waters","Helensvale","Kyogle","Ormeau","Pimpama","Robina","Runaway Bay","Southport","The Pines","Upper Coomera","Yamba"],"Joshua Coxen":["Bentley Park","Bowen","Brinsmead","Browns Plains Rbd","Cairns","Mackay(Mt Pleasant)","Marsden","South Mackay","Waterford West","Yarrabilba"],"Kellie Patane":["Alderley","Ashgrove","Bundaberg","Caboolture","Clontarf","Deception Bay","Everton Park","Gympie","Hervey Bay","Maryborough","Mt Isa","New Farm","Noosaville","Nundah","Peregian Springs"],"Nathan Lim":["Brassall","Clinton","Fernvale","Gladstone","Ipswich","Oakey","Pittsworth","Plainland","Redbank Plains","Rockhampton North","Rockhampton South","Rosewood","Toowoomba Rbd","Warwick","Wilsonton","Yamanto"],"Rhys Healey":["Bellbowrie","Birkdale","Camp Hill","Capalaba","Cleveland","Darra","Deception Bay","Holland Park","Mango Hill","Morayfield","Mount Gravatt","St Lucia","Woolloongabba","Wynnum"],"Ronnie Sehmi":["Augustine Heights","Beenleigh","Charters Towers","Coopers Plains","Deeragun","Fairfield Waters","Forest Lake","Goodna","Kirwan","Loganholme","Moorooka","Springwood","Stretton","The Lakes","Woodridge"],"Yasmin Mays":["Aspley","Beerwah","Blackwater","Cannon Hill","Carina","Chancellor Park","Currimundi","Emerald","Kawana Waters","Maroochydore","Narangba","Palmwoods","Strathpine","Taigum","Warner"]};
+
+// ══ SCREEN FLOWS ══
+const FLOWS = {
+  structured: ['sc-splash','sc-login','sc-visittype','sc-store','sc-hw','sc-equip','sc-temps1','sc-temps2','sc-ovens','sc-dough','sc-pizza','sc-pest','sc-foyer','sc-team','sc-summary','sc-success'],
+  peak: ['sc-splash','sc-login','sc-visittype','sc-store','sc-peak-team','sc-dough','sc-pizza','sc-summary','sc-success'],
+  business: ['sc-splash','sc-login','sc-visittype','sc-store','sc-br-meeting','sc-br-points','sc-br-actions','sc-br-engagement','sc-summary','sc-success']
+};
+
+// ══ SCORING ══
+const SCORING = {
+  structured: {
+    fscc: {hwPoster:2,hwSoap:2,hwTowel:2,hwSanitiser:2,hutBotCompleted:4,iceCalibration:4,fssValid:4,sanitiserBuckets:2,iceTrayFilled:2,trackingSheets:2,everythingInDate:8,foyerClean:2,rollerCutoff:2,mixerCutoff:2},
+    brand: {ovenExhaust:2,doughStorage:4,doughDated:4,doughQuality:4,pizzaMeetsStandard:6,openSign:2,menuUpdated:2,donesafeAccess:4,certifiedManager:4,uniformCompliant:4,deploymentPlan:4},
+    pestBonus: {pestActivity:8},
+    complaintsBonus: {openComplaints:6}
+  },
+  peak: {
+    brand: {doughStorage:6,doughDated:6,doughQuality:6,pizzaMeetsStandard:10,certifiedManager:4,uniformCompliant:4,deploymentPlan:4}
+  }
+};
+
+let curFlow = [];
+let curIdx = 0;
+let visitType = '';
+let F = {};
+let photos = {};
+let lastData = {};
+let brEngagement = 0;
+
+// ══ AM SELECT ══
+function onAMSelect() {
+  const am = document.getElementById('selAM').value;
+  if (!am) { document.getElementById('amInfoBox').style.display='none'; return; }
+  F.areaManager = am;
+  F.state = AM_STATE[am] || '';
+  F.regionalDirector = AM_RD[am] || '';
+  F.rdEmail = RD_EMAILS[F.regionalDirector] || CONFIG.adminEmail;
+  F.amEmail = AM_EMAILS[am] || '';
+  document.getElementById('amEmail').value = F.amEmail;
+  document.getElementById('amInfoBox').style.display = 'block';
+  document.getElementById('amInfoName').textContent = am;
+  document.getElementById('amInfoDetails').textContent = F.state + ' · ' + F.regionalDirector + ' · ' + (AM_STORES[am]||[]).length + ' stores';
+  // Populate stores
+  const stores = AM_STORES[am] || [];
+  const sel = document.getElementById('selStore');
+  sel.innerHTML = '<option value="">— Tap to select store —</option>' + stores.map(s=>`<option>${s}</option>`).join('');
+}
+
+// ══ VISIT TYPE ══
+function selectVisitType(type, card) {
+  document.querySelectorAll('.visit-type-card').forEach(c=>c.classList.remove('selected'));
+  card.classList.add('selected');
+  visitType = type;
+  curFlow = FLOWS[type];
+  // Update dough/pizza labels
+  if (type === 'peak') {
+    document.getElementById('doughQNum').textContent = 'Peak Visit · Dough';
+    document.getElementById('pizzaQNum').textContent = 'Peak Visit · Pizza';
+  }
+  setTimeout(() => goNext(), 300);
+}
+
+function launch360() {
+  // Record the 360 visit
+  F.visitType = '360 Coach Visit';
+  lastData = {...F, title:'360-'+Date.now(), visitDate: document.getElementById('visitDate').value||new Date().toISOString().split('T')[0]};
+  // Open HutBot
+  window.location.href = CONFIG.hutbotUrl;
+  // Show confirmation
+  setTimeout(() => {
+    document.getElementById('successRef').textContent = '360° Coach Visit recorded — HutBot opened';
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    document.getElementById('sc-success').classList.add('active');
+    document.getElementById('bottomNav').style.display = 'none';
+    document.getElementById('secBadge').textContent = 'Done';
+  }, 500);
+}
+
+// ══ ENGAGEMENT ══
+function setEngagement(val, btn) {
+  brEngagement = val;
+  const labels = {1:'Poor',2:'Developing',3:'Engaged',4:'Strong',5:'Exceptional'};
+  document.querySelectorAll('.eng-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  document.getElementById('engagementLabel').textContent = labels[val] || '';
+}
+
+// ══ NAVIGATION ══
+function updateUI() {
+  const screenId = curFlow[curIdx];
+  const sc = document.getElementById(screenId);
+  document.getElementById('secBadge').textContent = sc?.dataset.sec || '';
+  const pct = curIdx > 0 ? Math.round(((curIdx-1) / (curFlow.length-3)) * 100) : 0;
+  document.getElementById('pgFill').style.width = Math.min(pct,100) + '%';
+  const hiddenScreens = ['sc-splash','sc-success','sc-recent','sc-visittype'];
+  const nav = document.getElementById('bottomNav');
+  nav.style.display = hiddenScreens.includes(screenId) ? 'none' : 'flex';
+  if (!hiddenScreens.includes(screenId)) {
+    document.getElementById('backBtn').style.display = curIdx > 1 ? 'flex' : 'none';
+    const nextBtn = document.getElementById('nextBtn');
+    if (screenId === 'sc-summary') {
+      nextBtn.textContent = '✓ Submit & PDF'; nextBtn.className = 'btn-submit'; nextBtn.onclick = submitForm;
+    } else {
+      nextBtn.textContent = 'Continue →'; nextBtn.className = 'btn-next'; nextBtn.onclick = goNext;
+    }
+  }
+}
+
+function showScreen(idx) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  const sc = document.getElementById(curFlow[idx]);
+  if (sc) { sc.classList.add('active'); setTimeout(()=>sc.scrollTop=0,50); }
+  curIdx = idx; updateUI();
+  if (curFlow[idx] === 'sc-summary') buildSummary();
+}
+
+function goTo(id) {
+  if (!curFlow.length) curFlow = FLOWS.structured;
+  const idx = curFlow.indexOf(id);
+  if (idx >= 0) showScreen(idx);
+  else { curFlow = FLOWS.structured; curIdx=0; document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); updateUI(); }
+}
+
+function goNext() { if (!validate()) return; showScreen(curIdx+1); }
+function goBack() { if (curIdx > 0) showScreen(curIdx-1); }
+
+function viewRecent() {
+  loadRecent();
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('sc-recent').classList.add('active');
+  document.getElementById('secBadge').textContent = 'My Visits';
+  document.getElementById('bottomNav').style.display = 'none';
+}
+
+// ══ ANSWER BUTTONS ══
+function ans(field, val, btn, cls) {
+  F[field] = val;
+  if (!btn) return;
+  const stack = btn.closest('.answer-stack');
+  if (stack) stack.querySelectorAll('.answer-btn').forEach(b=>b.className='answer-btn');
+  btn.classList.add('sel-'+cls);
+}
+
+// ══ CHIPS & CONDITIONALS ══
+function toggleChip(el) { el.classList.toggle('on'); }
+function getChips(el) { if(!el) return ''; return [...el.querySelectorAll('.chip.on')].map(c=>c.textContent).join(', '); }
+function showCond(id, show) { document.getElementById(id)?.classList.toggle('show', show); }
+function checkPest() {
+  const v = document.getElementById('lastPestVisit').value; if(!v) return;
+  document.getElementById('pestStop').style.display = (Date.now()-new Date(v).getTime())/86400000>90?'flex':'none';
+}
+
+// ══ PHOTO ══
+function capturePhoto(input, tileId, field) {
+  const file = input.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    photos[field] = {dataUrl:e.target.result,file};
+    const tile = document.getElementById(tileId);
+    tile.classList.add('captured');
+    let img = tile.querySelector('img');
+    if (!img) { img = document.createElement('img'); tile.appendChild(img); }
+    img.src = e.target.result;
+    if (!tile.querySelector('.pt-badge')) { const b=document.createElement('div'); b.className='pt-badge'; b.textContent='✓'; tile.appendChild(b); }
+    tile.querySelector('.pt-icon')&&(tile.querySelector('.pt-icon').style.display='none');
+    tile.querySelector('.pt-label')&&(tile.querySelector('.pt-label').style.display='none');
+  };
+  reader.readAsDataURL(file);
+}
+
+// ══ VALIDATE ══
+function validate() {
+  const sc = curFlow[curIdx];
+  const err = id => { document.getElementById(id)?.classList.add('has-err'); return false; };
+  const clr = id => document.getElementById(id)?.classList.remove('has-err');
+  const reqVal = (id,fg) => { const e=document.getElementById(id); if(!e?.value?.trim()) return err(fg); clr(fg); return true; };
+
+  if (sc==='sc-login') {
+    let ok = true;
+    if (!document.getElementById('selAM').value) { err('fg-am'); ok=false; } else clr('fg-am');
+    const em = document.getElementById('amEmail').value;
+    if (!em||!em.includes('@')) { document.getElementById('fg-email').classList.add('has-err'); ok=false; } else clr('fg-email');
+    if (ok) F.amEmail = em;
+    return ok;
+  }
+  if (sc==='sc-visittype') { if (!visitType) { alert('Please select a visit type'); return false; } return true; }
+  if (sc==='sc-store') {
+    let ok = true;
+    if (!document.getElementById('selStore').value) { err('fg-store'); ok=false; } else { clr('fg-store'); F.storeName=document.getElementById('selStore').value; }
+    ok = reqVal('txtMOD','fg-mod') && ok;
+    ok = reqVal('txtSubject','fg-subj') && ok;
+    ok = reqVal('visitDate','fg-date') && ok;
+    ok = reqVal('visitTime','fg-time') && ok;
+    if (ok) { F.managerOnDuty=document.getElementById('txtMOD').value; F.visitSubject=document.getElementById('txtSubject').value; F.visitDate=document.getElementById('visitDate').value; F.visitTime=document.getElementById('visitTime').value; F.visitType=visitType==='structured'?'Structured Store Visit':visitType==='peak'?'Peak Visit':'Business Review'; }
+    return ok;
+  }
+  if (sc==='sc-equip') {
+    let ok=true;
+    if(!F.rollerCutoff){err('fg-roller');ok=false;}
+    if(!F.mixerCutoff){err('fg-mixer');ok=false;}
+    if(!F.fssValid){err('fg-fss');ok=false;}
+    if(!F.sanitiserBuckets){err('fg-sanit');ok=false;}
+    return ok;
+  }
+  if (sc==='sc-temps1') {
+    let ok=true;
+    if(!F.hutBotCompleted){err('fg-hutbot');ok=false;}
+    if(!F.iceCalibration){err('fg-ice');ok=false;}
+    if(ok){F.cheeseTemp=document.getElementById('tempCheese').value;F.veggieTemp=document.getElementById('tempVeggie').value;F.meatTemp=document.getElementById('tempMeat').value;F.maketableScore=document.getElementById('maketableScore').value;}
+    return ok;
+  }
+  if (sc==='sc-temps2') {
+    let ok=true;
+    if(!F.iceTrayFilled){err('fg-icetray');ok=false;}
+    if(ok){F.foodSafetyComments=document.getElementById('foodSafetyComments').value;F.hwCorrections=document.getElementById('hwCorrections')?.value||'';}
+    return ok;
+  }
+  if (sc==='sc-ovens') {
+    let ok=true;
+    if(!F.ovenExhaust){err('fg-exhaust');ok=false;}
+    if(!F.everythingInDate){err('fg-indate');ok=false;}
+    if(ok){F.oven1=document.getElementById('oven1').value;F.oven2=document.getElementById('oven2').value;F.oven3=document.getElementById('oven3').value;F.expiredIngredients=document.getElementById('expiredIngredients').value;F.expiringToday=document.getElementById('expiringToday').value;}
+    return ok;
+  }
+  if (sc==='sc-dough') {
+    let ok=true;
+    if(!F.doughStorage){err('fg-dstorage');ok=false;}
+    if(!F.doughDated){err('fg-ddated');ok=false;}
+    if(!F.doughQuality){err('fg-dquality');ok=false;}
+    if(ok){F.doughStorageIssues=getChips(document.getElementById('dsiCond'));F.doughDatingIssues=getChips(document.getElementById('ddiCond'));F.doughQualityIssues=getChips(document.getElementById('dqiCond'));F.doughComments=document.getElementById('doughComments').value;}
+    return ok;
+  }
+  if (sc==='sc-pizza') { if(!F.pizzaMeetsStandard){err('fg-pizza');return false;} F.pizzaIssues=getChips(document.getElementById('pizzaChips')); return true; }
+  if (sc==='sc-peak-team') {
+    let ok=true;
+    if(!F.certifiedManager){err('fg-certmgr-peak');ok=false;}
+    if(!F.uniformCompliant){err('fg-uni-peak');ok=false;}
+    if(!F.deploymentPlan){err('fg-deploy-peak');ok=false;}
+    return ok;
+  }
+  if (sc==='sc-pest') {
+    let ok=true;
+    const lp=document.getElementById('lastPestVisit').value;
+    if(!lp){err('fg-pest');ok=false;}else{clr('fg-pest');F.lastPestVisit=lp;}
+    if(!F.pestActivity){err('fg-pestact');ok=false;}
+    if(ok)F.pestLocations=document.getElementById('pestLocations').value;
+    return ok;
+  }
+  if (sc==='sc-foyer') {
+    let ok=true;
+    if(!F.foyerClean){err('fg-clean');ok=false;}
+    if(!F.foyerLights){err('fg-lights');ok=false;}
+    if(!F.openSign){err('fg-sign');ok=false;}
+    if(!F.menuUpdated){err('fg-menu');ok=false;}
+    if(ok)F.foyerWorkNeeded=document.getElementById('foyerWorkNeeded').value;
+    return ok;
+  }
+  if (sc==='sc-team') {
+    let ok=true;
+    if(!F.donesafeAccess){err('fg-done');ok=false;}
+    if(!F.openComplaints){err('fg-comp');ok=false;}
+    if(!F.certifiedManager){err('fg-certmgr');ok=false;}
+    if(!F.uniformCompliant){err('fg-uni');ok=false;}
+    if(!F.deploymentPlan){err('fg-deploy');ok=false;}
+    if(ok)F.generalComments=document.getElementById('generalComments').value;
+    return ok;
+  }
+  if (sc==='sc-br-meeting') {
+    F.brLocation=document.getElementById('brLocation').value;
+    F.brAttendees=document.getElementById('brAttendees').value;
+    F.brSSS=document.getElementById('brSSS').value;
+    F.brDelivery=document.getElementById('brDelivery').value;
+    F.brACE=document.getElementById('brACE').value;
+    F.brWINSCORE=document.getElementById('brWINSCORE').value;
+    return true;
+  }
+  if (sc==='sc-br-points') {
+    F.brTopics=getChips(document.getElementById('brTopicChips'));
+    F.brDiscussion=document.getElementById('brDiscussion').value;
+    F.brConcerns=document.getElementById('brConcerns').value;
+    return true;
+  }
+  if (sc==='sc-br-actions') {
+    F.brActions=[];
+    for(let i=1;i<=5;i++){
+      const desc=document.getElementById(`br-a${i}-desc`)?.value;
+      const owner=document.getElementById(`br-a${i}-owner`)?.value;
+      const due=document.getElementById(`br-a${i}-due`)?.value;
+      if(desc) F.brActions.push({desc,owner,due});
+    }
+    return true;
+  }
+  if (sc==='sc-br-engagement') {
+    F.brEngagement=brEngagement;
+    F.brEngagementLabel=['','Poor','Developing','Engaged','Strong','Exceptional'][brEngagement]||'';
+    F.brFollowUp=document.getElementById('brFollowUp').value;
+    F.brNextMeeting=document.getElementById('brNextMeeting').value;
+    F.brNotes=document.getElementById('brNotes').value;
+    return true;
+  }
+  return true;
+}
+
+// ══ SCORE CALCULATION ══
+function calcScore() {
+  if (visitType === 'business') return {total:0,fscc:0,brand:0,type:'business'};
+
+  if (visitType === 'peak') {
+    const s = SCORING.peak;
+    let brand = 0;
+    Object.entries(s.brand).forEach(([field,pts]) => { if(F[field]==='Yes') brand+=pts; });
+    const raw = brand; // out of 40
+    const normalised = Math.round((raw/40)*100);
+    return {total:normalised, fscc:0, brand:raw, brandMax:40, type:'peak', normalised:true};
+  }
+
+  // Structured
+  const s = SCORING.structured;
+  let fscc = 0, brand = 0;
+  Object.entries(s.fscc).forEach(([field,pts]) => { if(F[field]==='Yes') fscc+=pts; });
+  Object.entries(s.brand).forEach(([field,pts]) => { if(F[field]==='Yes') brand+=pts; });
+  if (F.pestActivity==='No') fscc += s.pestBonus.pestActivity;
+  if (F.openComplaints==='No') brand += s.complaintsBonus.openComplaints;
+  fscc = Math.min(fscc, 50);
+  brand = Math.min(brand, 50);
+  return {total:fscc+brand, fscc, brand, type:'structured'};
+}
+
+// ══ BUILD SUMMARY ══
+function buildSummary() {
+  const scores = calcScore();
+  F.score = String(scores.total);
+  F.fsccScore = String(scores.fscc||0);
+  F.brandScore = String(scores.brand||0);
+  F.title = (visitType==='business'?'BR':'SV') + '-' + (F.storeName||'XX').replace(/\s/g,'-') + '-' + Date.now();
+  F.submittedAt = new Date().toISOString();
+  F.photoCount = String(Object.keys(photos).length);
+  lastData = {...F};
+
+  if (visitType === 'business') {
+    buildBusinessSummary(); return;
+  }
+
+  const isPeak = visitType === 'peak';
+  const displayScore = isPeak ? scores.normalised : scores.total;
+  const col = displayScore>=90?'var(--green)':displayScore>=75?'#4ade80':displayScore>=60?'var(--yellow)':'#ff7090';
+  const grade = displayScore>=90?'Outstanding ⭐':displayScore>=75?'Pass ✅':displayScore>=60?'Borderline ⚠️':'Needs Improvement ❌';
+  const circ = 2*Math.PI*54;
+  const fill = (displayScore/100)*circ;
+
+  let scoreBreakdown = '';
+  if (!isPeak) {
+    scoreBreakdown = `<div class="score-breakdown">
+      <div class="score-section">
+        <div class="ss-label" style="color:#67E8F9;">FSCC</div>
+        <div class="ss-score" style="color:#67E8F9;">${scores.fscc}</div>
+        <div class="ss-max">/50</div>
+      </div>
+      <div class="score-section">
+        <div class="ss-label" style="color:#C4B5FD;">Brand Standard</div>
+        <div class="ss-score" style="color:#C4B5FD;">${scores.brand}</div>
+        <div class="ss-max">/50</div>
+      </div>
+    </div>`;
+  } else {
+    scoreBreakdown = `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center;margin-bottom:16px;">
+      <div style="font-size:11px;color:var(--dim);font-weight:700;text-transform:uppercase;margin-bottom:4px;">Peak Visit Raw Score</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;color:var(--yellow);">${scores.brand}<span style="font-size:14px;color:var(--dim)">/40</span></div>
+      <div style="font-size:11px;color:var(--dim);margin-top:4px;">Normalised to 100 for comparison</div>
+    </div>`;
+  }
+
+  const rows = [
+    ['Visit Type', F.visitType||'—'],['Store', F.storeName||'—'],
+    ['Area Manager', F.areaManager||'—'],['Visit Date', F.visitDate||'—'],
+    ['Manager on Duty', F.managerOnDuty||'—'],
+    ...(!isPeak?[['FSS Certificate', F.fssValid||'—'],['HutBot', F.hutBotCompleted||'—'],['Ice Calibration', F.iceCalibration||'—'],['Ingredients In Date', F.everythingInDate||'—'],['Pest Activity', F.pestActivity==='No'?'All Clear ✅':F.pestActivity==='Yes'?'Found ⚠️':'—']]:[]),
+    ['Pizza Standards', F.pizzaMeetsStandard||'—'],
+    ['Dough Quality', F.doughQuality||'—'],
+    ...(!isPeak?[['Open Complaints', F.openComplaints==='No'?'None ✅':F.openComplaints==='Yes'?'Open ⚠️':'—']]:[]),
+    ['Certified Manager', F.certifiedManager||'—'],
+    ['Photos', F.photoCount+' taken'],
+  ];
+
+  const rowsHTML = rows.map(([k,v])=>{
+    const cls=v==='Yes'||v.includes('✅')?'v-yes':v==='No'||v.includes('⚠️')?'v-no':v==='N/A'?'v-na':'v-neu';
+    return `<div class="sum-row"><span class="sum-key">${k}</span><span class="sum-val ${cls}">${v}</span></div>`;
+  }).join('');
+
+  document.getElementById('summaryContent').innerHTML = `
+    <div class="q-num">Review & Submit</div>
+    <div class="q-text" style="font-size:26px;margin-bottom:16px;">${isPeak?'Peak Visit':'Structured Visit'} Summary</div>
+    <div class="score-hero">
+      <div class="score-ring">
+        <svg width="130" height="130" viewBox="0 0 130 130">
+          <circle cx="65" cy="65" r="54" fill="none" stroke="var(--border2)" stroke-width="11"/>
+          <circle cx="65" cy="65" r="54" fill="none" stroke="${col}" stroke-width="11" stroke-dasharray="${fill} ${circ}" stroke-linecap="round" style="transition:stroke-dasharray 1s ease"/>
+        </svg>
+        <div class="score-val" style="color:${col}">${displayScore}</div>
+        <div class="score-max">/100</div>
+      </div>
+      <div class="score-grade" style="color:${col}">${grade}</div>
+    </div>
+    ${scoreBreakdown}
+    <div class="summary-list">${rowsHTML}</div>
+    <div style="height:20px;"></div>`;
+}
+
+function buildBusinessSummary() {
+  const engLabels = ['','Poor','Developing','Engaged','Strong','Exceptional'];
+  const engCol = [,'#ff7090','#f59e0b','#60a5fa','#4ade80','#22c55e'][F.brEngagement||0];
+  const actionsHTML = (F.brActions||[]).map((a,i)=>
+    `<div class="sum-row"><span class="sum-key">Action ${i+1}: ${a.desc}</span><span class="sum-val v-neu" style="font-size:11px;">${a.owner||'—'} · ${a.due||'—'}</span></div>`
+  ).join('');
+
+  document.getElementById('summaryContent').innerHTML = `
+    <div class="q-num">Review & Submit</div>
+    <div class="q-text" style="font-size:26px;margin-bottom:16px;">Business Review Summary</div>
+    <div style="text-align:center;padding:20px 0;">
+      <div style="font-size:13px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px;">Franchisee Engagement</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:64px;font-weight:900;color:${engCol||'var(--dim)'};">${F.brEngagement||'—'}<span style="font-size:24px;color:var(--dim)">/5</span></div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:${engCol||'var(--dim)'};">${engLabels[F.brEngagement||0]||'Not rated'}</div>
+    </div>
+    <div class="summary-list">
+      <div class="sum-row"><span class="sum-key">Store</span><span class="sum-val v-neu">${F.storeName||'—'}</span></div>
+      <div class="sum-row"><span class="sum-key">Area Manager</span><span class="sum-val v-neu">${F.areaManager||'—'}</span></div>
+      <div class="sum-row"><span class="sum-key">Date</span><span class="sum-val v-neu">${F.visitDate||'—'}</span></div>
+      <div class="sum-row"><span class="sum-key">Franchisee / MOD</span><span class="sum-val v-neu">${F.managerOnDuty||'—'}</span></div>
+      <div class="sum-row"><span class="sum-key">SSS Growth</span><span class="sum-val v-neu">${F.brSSS?F.brSSS+'%':'—'}</span></div>
+      <div class="sum-row"><span class="sum-key">Delivery %</span><span class="sum-val v-neu">${F.brDelivery?F.brDelivery+'%':'—'}</span></div>
+      <div class="sum-row"><span class="sum-key">ACE Score</span><span class="sum-val v-neu">${F.brACE||'—'}</span></div>
+      <div class="sum-row"><span class="sum-key">WINSCORE</span><span class="sum-val v-neu">${F.brWINSCORE||'—'}</span></div>
+      <div class="sum-row"><span class="sum-key">Topics Covered</span><span class="sum-val v-neu" style="font-size:11px;text-align:right;max-width:60%;">${F.brTopics||'—'}</span></div>
+      <div class="sum-row"><span class="sum-key">Follow-up Date</span><span class="sum-val v-neu">${F.brFollowUp||'—'}</span></div>
+      <div class="sum-row"><span class="sum-key">Next Meeting</span><span class="sum-val v-neu">${F.brNextMeeting||'—'}</span></div>
+      ${actionsHTML}
+    </div>
+    <div style="height:20px;"></div>`;
+}
+
+// ══ SUBMIT ══
+async function submitForm() {
+  showOverlay('Saving', 'Connecting to SharePoint...');
+  try {
+    const digestRes = await fetch(`${CONFIG.siteUrl}/_api/contextinfo`,{method:'POST',headers:{'Accept':'application/json;odata=verbose','Content-Type':'application/json;odata=verbose'},credentials:'include'});
+    if (!digestRes.ok) throw new Error(`Session error ${digestRes.status}. Open this form from SharePoint.`);
+    const digestData = await digestRes.json();
+    const digest = digestData.d.GetContextWebInformation.FormDigestValue;
+
+    if (Object.keys(photos).length>0) {
+      updateOverlay('Uploading photos...');
+      const folderPath = `${CONFIG.photoLibrary}/${lastData.storeName}/${lastData.visitDate}`;
+      await fetch(`${CONFIG.siteUrl}/_api/web/folders`,{method:'POST',headers:{'Accept':'application/json;odata=verbose','Content-Type':'application/json;odata=verbose','X-RequestDigest':digest},credentials:'include',body:JSON.stringify({'__metadata':{'type':'SP.Folder'},'ServerRelativeUrl':`/sites/StoreSmart/${folderPath}`})});
+      for (const [field,photoObj] of Object.entries(photos)) {
+        try {
+          const blob = await (await fetch(photoObj.dataUrl)).blob();
+          await fetch(`${CONFIG.siteUrl}/_api/web/GetFolderByServerRelativeUrl('/sites/StoreSmart/${folderPath}')/Files/add(url='${field}.jpg',overwrite=true)`,{method:'POST',headers:{'Accept':'application/json;odata=verbose','X-RequestDigest':digest},credentials:'include',body:blob});
+        } catch(e){console.warn('Photo failed:',field);}
+      }
+      lastData.photoFolderPath = `${CONFIG.siteUrl}/${folderPath}`;
+    }
+
+    updateOverlay('Saving visit data...');
+    const fields = {
+      __metadata:{type:`SP.Data.${CONFIG.listName}ListItem`},
+      Title:lastData.title,AreaManager:lastData.areaManager||'',UserId:lastData.amEmail||'',
+      AMEmail:lastData.amEmail||'',RegionalDirector:lastData.regionalDirector||'',
+      State:lastData.state||'',StoreName:lastData.storeName||'',
+      ManagerOnDuty:lastData.managerOnDuty||'',VisitSubject:lastData.visitSubject||'',
+      VisitTime:lastData.visitTime||'',SpecialVisitType:lastData.visitType||'',
+      HandwashPoster:lastData.hwPoster||'',SoapDispenser:lastData.hwSoap||'',
+      PaperTowels:lastData.hwTowel||'',HandSanitiser:lastData.hwSanitiser||'',
+      HandwashCorrections:lastData.hwCorrections||'',RollerCutoff:lastData.rollerCutoff||'',
+      MixerCutoff:lastData.mixerCutoff||'',FSSValid:lastData.fssValid||'',
+      SanitiserBuckets:lastData.sanitiserBuckets||'',HutBotCompleted:lastData.hutBotCompleted||'',
+      IceCalibration:lastData.iceCalibration||'',CheeseTemp:parseFloat(lastData.cheeseTemp)||0,
+      VeggieTemp:parseFloat(lastData.veggieTemp)||0,MeatTemp:parseFloat(lastData.meatTemp)||0,
+      MaketableScore:parseFloat(lastData.maketableScore)||0,ThermometerCorrect:lastData.thermCorrect||'',
+      IceTrayFilled:lastData.iceTrayFilled||'',TrackingSheets:lastData.trackingSheets||'',
+      FoodSafetyComments:lastData.foodSafetyComments||'',Oven1:lastData.oven1||'',
+      Oven2:lastData.oven2||'',Oven3:lastData.oven3||'',OvenExhaust:lastData.ovenExhaust||'',
+      EverythingInDate:lastData.everythingInDate||'',ExpiredIngredients:lastData.expiredIngredients||'',
+      ExpiringToday:lastData.expiringToday||'',DoughStorage:lastData.doughStorage||'',
+      DoughStorageIssues:lastData.doughStorageIssues||'',DoughDated:lastData.doughDated||'',
+      DoughDatingIssues:lastData.doughDatingIssues||'',DoughQuality:lastData.doughQuality||'',
+      DoughQualityIssues:lastData.doughQualityIssues||'',DoughComments:lastData.doughComments||'',
+      PizzaMeetsStandard:lastData.pizzaMeetsStandard||'',PizzaIssues:lastData.pizzaIssues||'',
+      PestActivity:lastData.pestActivity||'',PestLocations:lastData.pestLocations||'',
+      FoyerClean:lastData.foyerClean||'',FoyerLights:lastData.foyerLights||'',
+      OpenSign:lastData.openSign||'',MenuUpdated:lastData.menuUpdated||'',
+      FoyerWorkNeeded:lastData.foyerWorkNeeded||'',DonesafeAccess:lastData.donesafeAccess||'',
+      OpenComplaints:lastData.openComplaints||'',CertifiedManager:lastData.certifiedManager||'',
+      UniformCompliant:lastData.uniformCompliant||'',HatCompliant:lastData.hatCompliant||'',
+      DeploymentPlan:lastData.deploymentPlan||'',GeneralComments:lastData.generalComments||'',
+      AdditionalModules:JSON.stringify({brTopics:lastData.brTopics,brDiscussion:lastData.brDiscussion,brConcerns:lastData.brConcerns,brActions:lastData.brActions,brEngagement:lastData.brEngagement,brEngagementLabel:lastData.brEngagementLabel,brFollowUp:lastData.brFollowUp,brNextMeeting:lastData.brNextMeeting,brNotes:lastData.brNotes,brSSS:lastData.brSSS,brDelivery:lastData.brDelivery,brACE:lastData.brACE,brWINSCORE:lastData.brWINSCORE,brLocation:lastData.brLocation,brAttendees:lastData.brAttendees}),
+      Score:parseFloat(lastData.score)||0,PhotoFolderPath:lastData.photoFolderPath||'',
+      PhotoCount:parseInt(lastData.photoCount)||0
+    };
+    if (lastData.visitDate) fields['VisitDate']=lastData.visitDate+'T00:00:00Z';
+    if (lastData.lastPestVisit) fields['LastPestVisit']=lastData.lastPestVisit+'T00:00:00Z';
+
+    const itemRes = await fetch(`${CONFIG.siteUrl}/_api/web/lists/getbytitle('${CONFIG.listName}')/items`,{method:'POST',headers:{'Accept':'application/json;odata=verbose','Content-Type':'application/json;odata=verbose','X-RequestDigest':digest},credentials:'include',body:JSON.stringify(fields)});
+    if (!itemRes.ok) { const e=await itemRes.json().catch(()=>({})); throw new Error(e?.error?.message?.value||`Error ${itemRes.status}`); }
+
+    updateOverlay('Generating PDF...');
+    await new Promise(r=>setTimeout(r,300));
+    downloadPDF();
+
+    const visits = JSON.parse(localStorage.getItem('ss_visits')||'[]');
+    visits.unshift({...lastData}); if(visits.length>50) visits.splice(50);
+    localStorage.setItem('ss_visits',JSON.stringify(visits));
+
+    hideOverlay();
+    document.getElementById('successRef').textContent = lastData.title;
+    goTo('sc-success');
+
+  } catch(err) {
+    hideOverlay();
+    const retry = confirm('⚠️ Submission failed:\n\n'+err.message+'\n\nDownload PDF as backup?');
+    if (retry) { downloadPDF(); document.getElementById('successRef').textContent=lastData.title+' (PDF only)'; goTo('sc-success'); }
+  }
+}
+
+// ══ RECENT VISITS ══
+async function loadRecent() {
+  const el = document.getElementById('recentList');
+  el.innerHTML='<div style="color:var(--dim);font-size:14px;text-align:center;padding:20px 0;">Loading...</div>';
+  try {
+    const email=F.amEmail||lastData.amEmail||'';
+    if(!email) throw new Error('no email');
+    const res = await fetch(`${CONFIG.siteUrl}/_api/web/lists/getbytitle('${CONFIG.listName}')/items?$filter=AMEmail eq '${email}'&$orderby=Created desc&$top=5&$select=Title,StoreName,VisitDate,Score,ManagerOnDuty,SpecialVisitType`,{headers:{'Accept':'application/json;odata=verbose'},credentials:'include'});
+    if(!res.ok) throw new Error('sp error');
+    const data=await res.json();
+    const items=data.d.results;
+    if(items.length){el.innerHTML=items.map(r=>renderCard({StoreName:r.StoreName,VisitDate:r.VisitDate,Score:r.Score,ManagerOnDuty:r.ManagerOnDuty,type:r.SpecialVisitType})).join('');return;}
+  } catch(e){}
+  const local=JSON.parse(localStorage.getItem('ss_visits')||'[]');
+  if(local.length){el.innerHTML=local.slice(0,5).map(r=>renderCard({StoreName:r.storeName,VisitDate:r.visitDate,Score:r.score,ManagerOnDuty:r.managerOnDuty,type:r.visitType})).join('');}
+  else el.innerHTML='<div style="color:var(--dim);font-size:14px;text-align:center;padding:40px 0;">No visits found yet.</div>';
+}
+
+function renderCard(r) {
+  const sc=parseInt(r.Score)||0;
+  const col=sc>=90?'var(--green)':sc>=75?'#4ade80':sc>=60?'var(--yellow)':'#ff7090';
+  const d=r.VisitDate?new Date(r.VisitDate).toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'numeric'}):'—';
+  const isBR=(r.type||'').includes('Business');
+  return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:10px;">
+    ${isBR?'':'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:28px;font-weight:900;float:right;color:'+col+'">'+sc+'</div>'}
+    <div style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:800;">${r.StoreName||'—'}</div>
+    <div style="font-size:12px;color:var(--dim);margin-top:3px;">${d} · ${r.type||'Visit'}</div>
+    <div style="font-size:12px;color:var(--dim);">MOD: ${r.ManagerOnDuty||'—'}</div>
+  </div>`;
+}
+
+// ══ PDF ══
+function downloadPDF() {
+  const d=lastData; if(!d.title){alert('Submit first.');return;}
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const W=210,M=16,CW=W-M*2;let y=0;
+
+  doc.setFillColor(227,24,55);doc.rect(0,0,W,42,'F');
+  doc.setFillColor(255,255,255);doc.circle(M+11,21,11,'F');
+  doc.setTextColor(227,24,55);doc.setFontSize(7);doc.setFont('helvetica','bold');
+  doc.text('STORE',M+11,17,{align:'center'});doc.text('SMART',M+11,22,{align:'center'});
+  doc.setTextColor(255,255,255);doc.setFontSize(20);doc.setFont('helvetica','bold');
+  doc.text(d.visitType||'STORE VISIT REPORT',M+27,19);
+  doc.setFontSize(9);doc.setFont('helvetica','normal');
+  doc.text('Pizza Hut Australia · Flynn Restaurant Group',M+27,28);
+  doc.setFontSize(7);doc.text('Ref: '+(d.title||'—'),W-M,13,{align:'right'});
+  doc.text(new Date().toLocaleString('en-AU'),W-M,20,{align:'right'});
+
+  doc.setFillColor(18,18,18);doc.rect(0,42,W,255,'F');
+  y=50;
+
+  const chkY=(n=14)=>{if(y+n>282){doc.addPage();doc.setFillColor(18,18,18);doc.rect(0,0,W,297,'F');y=14;}};
+  const sh=(t,i)=>{chkY(12);doc.setFillColor(35,35,35);doc.rect(M,y,CW,10,'F');doc.setTextColor(160,160,160);doc.setFontSize(8);doc.setFont('helvetica','bold');doc.text(i+'  '+t.toUpperCase(),M+3,y+7);y+=13;};
+  const rw=(l,v,issue=false)=>{
+    if(v===undefined||v===null||v==='')return;chkY(8);
+    const vS=String(v);let vc=[180,180,180];
+    if(vS==='Yes')vc=[34,197,94];else if(vS==='No')vc=[255,107,128];else if(vS==='N/A')vc=[245,158,11];else if(issue&&vS)vc=[255,107,128];
+    doc.setTextColor(100,100,100);doc.setFontSize(7.5);doc.setFont('helvetica','normal');doc.text(l,M,y);
+    doc.setTextColor(...vc);doc.setFont('helvetica','bold');
+    const ls=doc.splitTextToSize(vS,CW*0.48);doc.text(ls,W-M,y,{align:'right'});
+    y+=Math.max(ls.length*4.5,6);doc.setDrawColor(35,35,35);doc.line(M,y-1,W-M,y-1);y+=2;
+  };
+  const tb=(l,v)=>{if(!v)return;chkY(16);doc.setTextColor(100,100,100);doc.setFontSize(7.5);doc.setFont('helvetica','bold');doc.text(l+':',M,y);y+=5;doc.setTextColor(150,150,150);doc.setFont('helvetica','normal');doc.splitTextToSize(v,CW).forEach(ln=>{chkY(5);doc.text(ln,M,y);y+=4.5;});y+=3;};
+
+  sh('Visit Details','📋');
+  rw('Store',d.storeName);rw('State',d.state);rw('Area Manager',d.areaManager);
+  rw('Regional Director',d.regionalDirector);rw('Date',d.visitDate);rw('Time',d.visitTime);
+  rw('Manager on Duty / Franchisee',d.managerOnDuty);rw('Visit Subject',d.visitSubject);
+  rw('Visit Type',d.visitType);y+=4;
+
+  if (visitType==='business') {
+    sh('Business Review','🤝');
+    rw('Location',d.brLocation);tb('Attendees',d.brAttendees);
+    rw('SSS Growth',d.brSSS?d.brSSS+'%':'—');rw('Delivery %',d.brDelivery?d.brDelivery+'%':'—');
+    rw('ACE Score',d.brACE);rw('WINSCORE',d.brWINSCORE);y+=4;
+    sh('Discussion','💬');
+    tb('Topics',d.brTopics);tb('Points Discussed',d.brDiscussion);tb('Franchisee Concerns',d.brConcerns);y+=4;
+    sh('Action Items','✅');
+    (d.brActions||[]).forEach((a,i)=>{rw(`Action ${i+1}`,a.desc);if(a.owner)rw('Owner',a.owner);if(a.due)rw('Due',a.due);y+=2;});y+=4;
+    sh('Engagement & Next Steps','📅');
+    rw('Franchisee Engagement',`${d.brEngagement||'—'}/5 — ${d.brEngagementLabel||'—'}`);
+    rw('Follow-up Date',d.brFollowUp);rw('Next Meeting',d.brNextMeeting);tb('Additional Notes',d.brNotes);
+  } else {
+    // Score section
+    const sc=parseInt(d.score)||0;
+    const sc3=sc>=90?[34,197,94]:sc>=75?[34,197,94]:sc>=60?[245,158,11]:[227,24,55];
+    doc.setFillColor(...sc3);doc.roundedRect(W-M-34,44,36,22,3,3,'F');
+    doc.setTextColor(255,255,255);doc.setFontSize(18);doc.setFont('helvetica','bold');
+    doc.text(String(sc),W-M-16,57,{align:'center'});
+    doc.setFontSize(6);doc.setFont('helvetica','normal');doc.text('/100',W-M-16,62,{align:'center'});
+
+    if(visitType!=='peak'){
+      sh('FSCC — Food Safety Critical ('+d.fsccScore+'/50)','🧼');
+      rw('Handwash Poster',d.hwPoster);rw('Soap Dispenser',d.hwSoap);rw('Paper Towels',d.hwTowel);
+      rw('Hand Sanitiser',d.hwSanitiser);rw('Roller Cut-off',d.rollerCutoff);rw('Mixer Cut-off',d.mixerCutoff);
+      rw('FSS Certificate',d.fssValid);rw('Sanitiser Buckets',d.sanitiserBuckets);
+      rw('HutBot Completed',d.hutBotCompleted);rw('Ice Calibration',d.iceCalibration);
+      if(d.iceCalibration==='Yes'){rw('Cheese Temp °C',d.cheeseTemp);rw('Veggie Temp °C',d.veggieTemp);rw('Meat Temp °C',d.meatTemp);rw('Maketable Score',d.maketableScore);}
+      rw('Ice Tray Filled',d.iceTrayFilled);rw('Tracking Sheets',d.trackingSheets);
+      rw('Ingredients In Date',d.everythingInDate);if(d.expiredIngredients)rw('Expired Items',d.expiredIngredients,true);
+      rw('Foyer Clean',d.foyerClean);rw('Pest Activity Clear',d.pestActivity==='No'?'Yes':'No');
+      tb('Food Safety Comments',d.foodSafetyComments);y+=4;
+
+      sh('Brand Standard ('+d.brandScore+'/50)','⭐');
+      rw('Oven Exhaust',d.ovenExhaust);rw('Dough Storage',d.doughStorage);rw('Dough Dated',d.doughDated);
+      rw('Dough Quality',d.doughQuality);rw('Pizza Standards',d.pizzaMeetsStandard);
+      if(d.pizzaIssues)rw('Pizza Issues',d.pizzaIssues,true);
+      rw('Open Sign',d.openSign);rw('Menu Updated',d.menuUpdated);rw('Lights Working',d.foyerLights);
+      rw('Donesafe Access',d.donesafeAccess);rw('Open Complaints',d.openComplaints==='No'?'None':'Yes – action required');
+      rw('Certified Manager',d.certifiedManager);rw('Uniform Compliant',d.uniformCompliant);
+      rw('Deployment Plan',d.deploymentPlan);tb('General Comments',d.generalComments);y+=4;
+
+      sh('Pest Control','🐛');
+      rw('Last Service',d.lastPestVisit);rw('Activity',d.pestActivity);tb('Locations',d.pestLocations);y+=4;
+    } else {
+      sh('Peak Visit — Dough Quality','🫓');
+      rw('Dough Storage',d.doughStorage);rw('Dough Dated',d.doughDated);rw('Dough Quality',d.doughQuality);
+      if(d.doughQualityIssues)rw('Issues',d.doughQualityIssues,true);y+=4;
+      sh('Peak Visit — Pizza Quality','🍕');
+      rw('Meets Standards',d.pizzaMeetsStandard);if(d.pizzaIssues)rw('Issues',d.pizzaIssues,true);y+=4;
+      sh('Peak Visit — Team','👥');
+      rw('Certified Manager',d.certifiedManager);rw('Uniform & Hat',d.uniformCompliant);rw('Deployment Plan',d.deploymentPlan);y+=4;
+    }
+  }
+
+  if(d.photoFolderPath){sh('Photos','📷');tb('Photo Folder',d.photoFolderPath);}
+
+  const pc=doc.internal.getNumberOfPages();
+  for(let i=1;i<=pc;i++){
+    doc.setPage(i);doc.setFillColor(227,24,55);doc.rect(0,287,W,10,'F');
+    doc.setTextColor(255,255,255);doc.setFontSize(6.5);doc.setFont('helvetica','normal');
+    doc.text('StoreSmart · Pizza Hut Australia · Flynn Restaurant Group · CONFIDENTIAL',M,293);
+    doc.text(`Page ${i} of ${pc}`,W-M,293,{align:'right'});
+  }
+  doc.save(`${visitType==='business'?'BusinessReview':'StoreVisit'}_${(d.storeName||'XX').replace(/\s/g,'_')}_${d.visitDate||'date'}.pdf`);
+}
+
+// ══ OVERLAY ══
+function showOverlay(t,m){document.getElementById('ovTitle').textContent=t;document.getElementById('ovMsg').textContent=m;document.getElementById('overlay').classList.add('show');}
+function updateOverlay(m){document.getElementById('ovMsg').textContent=m;}
+function hideOverlay(){document.getElementById('overlay').classList.remove('show');}
+
+// ══ RESET ══
+function resetForm(){
+  F={};photos={};lastData={};visitType='';curFlow=[];curIdx=0;brEngagement=0;
+  document.querySelectorAll('input[type="text"],input[type="date"],input[type="time"],input[type="email"],input[type="number"],textarea,select').forEach(e=>e.value='');
+  document.querySelectorAll('.answer-btn').forEach(b=>b.className='answer-btn');
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
+  document.querySelectorAll('.cond').forEach(c=>c.classList.remove('show'));
+  document.querySelectorAll('.alert-stop,.alert-ok').forEach(a=>a.style.display='none');
+  document.querySelectorAll('.visit-type-card').forEach(c=>c.classList.remove('selected'));
+  document.querySelectorAll('.eng-btn').forEach(b=>b.classList.remove('sel'));
+  document.getElementById('engagementLabel').textContent='';
+  document.getElementById('amInfoBox').style.display='none';
+  document.querySelectorAll('.photo-tile').forEach(t=>{
+    t.classList.remove('captured');t.querySelector('img')?.remove();t.querySelector('.pt-badge')?.remove();
+    t.querySelector('.pt-icon')&&(t.querySelector('.pt-icon').style.display='');
+    t.querySelector('.pt-label')&&(t.querySelector('.pt-label').style.display='');
+  });
+  const now=new Date();
+  document.getElementById('visitDate').value=now.toISOString().split('T')[0];
+  document.getElementById('visitTime').value=now.toTimeString().slice(0,5);
+  // Reset to splash
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('sc-splash').classList.add('active');
+  document.getElementById('secBadge').textContent='Welcome';
+  document.getElementById('pgFill').style.width='0%';
+  document.getElementById('bottomNav').style.display='none';
+}
+
+// ══ INIT ══
+const now=new Date();
+document.getElementById('visitDate').value=now.toISOString().split('T')[0];
+document.getElementById('visitTime').value=now.toTimeString().slice(0,5);
+curFlow=FLOWS.structured;
+</script>
+</body>
+</html>
