@@ -1481,107 +1481,264 @@ function renderCard(r) {
 function downloadPDF() {
   const d=lastData; if(!d.title){alert('Submit first.');return;}
   const {jsPDF}=window.jspdf;
-  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-  const W=210,M=16,CW=W-M*2;let y=0;
+  // Mobile-optimised: narrow portrait, large fonts, tight spacing
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:[100,200]});
+  let W=100,M=6,CW=W-M*2;let y=0;
 
-  doc.setFillColor(227,24,55);doc.rect(0,0,W,42,'F');
-  doc.setFillColor(255,255,255);doc.circle(M+11,21,11,'F');
-  doc.setTextColor(227,24,55);doc.setFontSize(7);doc.setFont('helvetica','bold');
-  doc.text('STORE',M+11,17,{align:'center'});doc.text('SMART',M+11,22,{align:'center'});
-  doc.setTextColor(255,255,255);doc.setFontSize(20);doc.setFont('helvetica','bold');
-  doc.text(d.visitType||'STORE VISIT REPORT',M+27,19);
-  doc.setFontSize(9);doc.setFont('helvetica','normal');
-  doc.text('Pizza Hut Australia · Flynn Restaurant Group',M+27,28);
-  doc.setFontSize(7);doc.text('Ref: '+(d.title||'—'),W-M,13,{align:'right'});
-  doc.text(new Date().toLocaleString('en-AU'),W-M,20,{align:'right'});
+  // ── HEADER ──
+  doc.setFillColor(227,24,55);doc.rect(0,0,W,28,'F');
+  doc.setFillColor(255,255,255);doc.circle(M+6,14,6,'F');
+  doc.setTextColor(227,24,55);doc.setFontSize(4.5);doc.setFont('helvetica','bold');
+  doc.text('SS',M+6,15,{align:'center'});
+  doc.setTextColor(255,255,255);doc.setFontSize(11);doc.setFont('helvetica','bold');
+  doc.text('StoreSmart',M+16,10);
+  doc.setFontSize(6);doc.setFont('helvetica','normal');
+  doc.text(d.visitType||'Store Visit Report',M+16,16);
+  doc.text('Pizza Hut Australia',M+16,21);
+  doc.setFontSize(5);
+  doc.text(new Date().toLocaleDateString('en-AU'),W-M,10,{align:'right'});
+  doc.text(d.title||'',W-M,15,{align:'right'});
 
-  doc.setFillColor(18,18,18);doc.rect(0,42,W,255,'F');
-  y=50;
+  // ── SCORE BADGE (audit visits only) ──
+  if(visitType!=='business'){
+    const sc=parseInt(d.score)||0;
+    const sc3=sc>=90?[34,197,94]:sc>=75?[52,211,153]:sc>=60?[245,158,11]:[227,24,55];
+    doc.setFillColor(...sc3);doc.roundedRect(W-M-18,1,20,12,2,2,'F');
+    doc.setTextColor(255,255,255);doc.setFontSize(10);doc.setFont('helvetica','bold');
+    doc.text(String(sc),W-M-8,9,{align:'center'});
+    doc.setFontSize(4.5);doc.setFont('helvetica','normal');doc.text('/100',W-M-8,13,{align:'center'});
+  }
 
-  const chkY=(n=14)=>{if(y+n>282){doc.addPage();doc.setFillColor(18,18,18);doc.rect(0,0,W,297,'F');y=14;}};
-  const sh=(t,i)=>{chkY(12);doc.setFillColor(35,35,35);doc.rect(M,y,CW,10,'F');doc.setTextColor(160,160,160);doc.setFontSize(8);doc.setFont('helvetica','bold');doc.text(i+'  '+t.toUpperCase(),M+3,y+7);y+=13;};
-  const rw=(l,v,issue=false)=>{
-    if(v===undefined||v===null||v==='')return;chkY(8);
-    const vS=String(v);let vc=[180,180,180];
-    if(vS==='Yes')vc=[34,197,94];else if(vS==='No')vc=[255,107,128];else if(vS==='N/A')vc=[245,158,11];else if(issue&&vS)vc=[255,107,128];
-    doc.setTextColor(100,100,100);doc.setFontSize(7.5);doc.setFont('helvetica','normal');doc.text(l,M,y);
-    doc.setTextColor(...vc);doc.setFont('helvetica','bold');
-    const ls=doc.splitTextToSize(vS,CW*0.48);doc.text(ls,W-M,y,{align:'right'});
-    y+=Math.max(ls.length*4.5,6);doc.setDrawColor(35,35,35);doc.line(M,y-1,W-M,y-1);y+=2;
+  doc.setFillColor(18,18,18);doc.rect(0,28,W,172,'F');
+  y=34;
+
+  // ── HELPERS ──
+  const chkY=(n=12)=>{
+    if(y+n>195){
+      doc.addPage([100,200]);
+      doc.setFillColor(18,18,18);doc.rect(0,0,W,200,'F');
+      y=8;
+    }
   };
-  const tb=(l,v)=>{if(!v)return;chkY(16);doc.setTextColor(100,100,100);doc.setFontSize(7.5);doc.setFont('helvetica','bold');doc.text(l+':',M,y);y+=5;doc.setTextColor(150,150,150);doc.setFont('helvetica','normal');doc.splitTextToSize(v,CW).forEach(ln=>{chkY(5);doc.text(ln,M,y);y+=4.5;});y+=3;};
 
-  sh('Visit Details','📋');
-  rw('Store',d.storeName);rw('State',d.state);rw('Area Manager',d.areaManager);
-  rw('Regional Director',d.regionalDirector);rw('Date',d.visitDate);rw('Time',d.visitTime);
-  rw('Manager on Duty / Franchisee',d.managerOnDuty);rw('Visit Subject',d.visitSubject);
-  rw('Visit Type',d.visitType);y+=4;
+  // Section header — larger, bolder, more breathing room
+  const sh=(t,col=[50,50,50])=>{
+    chkY(14);
+    doc.setFillColor(...col);doc.rect(M,y,CW,9,'F');
+    doc.setTextColor(220,220,220);doc.setFontSize(7.5);doc.setFont('helvetica','bold');
+    doc.text(t.toUpperCase(),M+3,y+6.5);
+    y+=12;
+  };
+
+  // Row — label on left, value on right, larger font
+  const rw=(l,v,issue=false)=>{
+    if(v===undefined||v===null||String(v).trim()==='')return;
+    chkY(10);
+    const vS=String(v);
+    let vc=[160,160,160];
+    if(vS==='Yes')vc=[34,197,94];
+    else if(vS==='No')vc=[255,100,120];
+    else if(vS==='N/A')vc=[245,158,11];
+    else if(issue&&vS)vc=[255,100,120];
+    // Label
+    doc.setTextColor(120,120,120);doc.setFontSize(7);doc.setFont('helvetica','normal');
+    const lLines=doc.splitTextToSize(l,CW*0.55);
+    doc.text(lLines,M,y);
+    // Value
+    doc.setTextColor(...vc);doc.setFont('helvetica','bold');doc.setFontSize(7.5);
+    const vLines=doc.splitTextToSize(vS,CW*0.42);
+    doc.text(vLines,W-M,y,{align:'right'});
+    const rowH=Math.max(lLines.length,vLines.length)*4.8+3;
+    y+=rowH;
+    // Divider
+    doc.setDrawColor(38,38,38);doc.line(M,y-1,W-M,y-1);
+  };
+
+  // Text block — for long text content
+  const tb=(l,v)=>{
+    if(!v||!String(v).trim())return;
+    chkY(16);
+    doc.setTextColor(120,120,120);doc.setFontSize(7);doc.setFont('helvetica','bold');
+    doc.text(l+':',M,y);y+=5;
+    doc.setTextColor(180,180,180);doc.setFont('helvetica','normal');doc.setFontSize(7);
+    const lines=doc.splitTextToSize(String(v),CW);
+    lines.forEach(ln=>{chkY(5);doc.text(ln,M,y);y+=4.5;});
+    y+=3;
+  };
+
+  // Score breakdown box
+  const scoreBox=(fscc,brand)=>{
+    chkY(20);
+    doc.setFillColor(28,28,28);doc.roundedRect(M,y,CW,16,2,2,'F');
+    // FSCC
+    doc.setFillColor(14,116,144);doc.roundedRect(M+1,y+1,(CW/2)-2,14,2,2,'F');
+    doc.setTextColor(255,255,255);doc.setFontSize(5.5);doc.setFont('helvetica','bold');
+    doc.text('FSCC',M+CW/4,y+6,{align:'center'});
+    doc.setFontSize(11);doc.text(String(fscc),M+CW/4,y+13,{align:'center'});
+    doc.setFontSize(5);doc.setFont('helvetica','normal');doc.text('/50',M+CW/4+6,y+13);
+    // Brand
+    doc.setFillColor(109,40,217);doc.roundedRect(M+CW/2+1,y+1,(CW/2)-2,14,2,2,'F');
+    doc.setTextColor(255,255,255);doc.setFontSize(5.5);doc.setFont('helvetica','bold');
+    doc.text('BRAND STD',M+CW*0.75,y+6,{align:'center'});
+    doc.setFontSize(11);doc.text(String(brand),M+CW*0.75,y+13,{align:'center'});
+    doc.setFontSize(5);doc.setFont('helvetica','normal');doc.text('/50',M+CW*0.75+6,y+13);
+    y+=20;
+  };
+
+  // ── VISIT DETAILS ──
+  sh('Visit Details',[40,40,40]);
+  rw('Store',d.storeName);
+  rw('State',d.state);
+  rw('Area Manager',d.areaManager);
+  rw('Regional Director',d.regionalDirector);
+  rw('Date',d.visitDate);
+  rw('Time',d.visitTime);
+  rw('Manager on Duty',d.managerOnDuty);
+  rw('Visit Subject',d.visitSubject);
+  rw('Visit Type',d.visitType);
+  y+=4;
 
   if (visitType==='business') {
-    sh('Business Review','🤝');
-    rw('Location',d.brLocation);tb('Attendees',d.brAttendees);
-    rw('SSS Growth',d.brSSS?d.brSSS+'%':'—');rw('Delivery %',d.brDelivery?d.brDelivery+'%':'—');
-    rw('ACE Score',d.brACE);rw('WINSCORE',d.brWINSCORE);y+=4;
-    sh('Discussion','💬');
-    tb('Topics',d.brTopics);tb('Points Discussed',d.brDiscussion);tb('Franchisee Concerns',d.brConcerns);y+=4;
-    sh('Action Items','✅');
-    (d.brActions||[]).forEach((a,i)=>{rw(`Action ${i+1}`,a.desc);if(a.owner)rw('Owner',a.owner);if(a.due)rw('Due',a.due);y+=2;});y+=4;
-    sh('Engagement & Next Steps','📅');
-    rw('Franchisee Engagement',`${d.brEngagement||'—'}/5 — ${d.brEngagementLabel||'—'}`);
-    rw('Follow-up Date',d.brFollowUp);rw('Next Meeting',d.brNextMeeting);tb('Additional Notes',d.brNotes);
+    // ── BUSINESS REVIEW ──
+    sh('Meeting Details',[14,71,84]);
+    rw('Location',d.brLocation);
+    tb('Attendees',d.brAttendees);
+    rw('SSS Growth',d.brSSS?d.brSSS+'%':'—');
+    rw('Delivery %',d.brDelivery?d.brDelivery+'%':'—');
+    rw('ACE Score',d.brACE);
+    rw('WINSCORE',d.brWINSCORE);
+    y+=4;
+
+    sh('Discussion',[30,64,175]);
+    tb('Topics Covered',d.brTopics);
+    tb('Points Discussed',d.brDiscussion);
+    tb('Franchisee Concerns',d.brConcerns);
+    y+=4;
+
+    sh('Action Items',[21,128,61]);
+    (d.brActions||[]).forEach((a,i)=>{
+      if(!a.desc) return;
+      chkY(18);
+      doc.setFillColor(28,28,28);doc.roundedRect(M,y,CW,14,2,2,'F');
+      doc.setTextColor(227,24,55);doc.setFontSize(6.5);doc.setFont('helvetica','bold');
+      doc.text(`Action ${i+1}`,M+2,y+5);
+      doc.setTextColor(200,200,200);doc.setFontSize(7);doc.setFont('helvetica','normal');
+      const dLines=doc.splitTextToSize(a.desc,CW-4);
+      doc.text(dLines,M+2,y+10);
+      if(a.owner||a.due){
+        doc.setTextColor(120,120,120);doc.setFontSize(6);
+        doc.text((a.owner||'—')+' · '+(a.due||'—'),M+2,y+13);
+      }
+      y+=17;
+    });
+    y+=4;
+
+    sh('Engagement & Next Steps',[109,40,217]);
+    // Engagement visual
+    chkY(20);
+    const eng=parseInt(d.brEngagement)||0;
+    const engCol=[[227,24,55],[245,158,11],[96,165,250],[74,222,128],[34,197,94]][eng-1]||[80,80,80];
+    doc.setFillColor(...engCol);doc.roundedRect(M,y,CW,12,2,2,'F');
+    doc.setTextColor(255,255,255);doc.setFontSize(9);doc.setFont('helvetica','bold');
+    doc.text(`${eng}/5 — ${d.brEngagementLabel||'Not rated'}`,W/2,y+8,{align:'center'});
+    y+=16;
+    rw('Follow-up Date',d.brFollowUp);
+    rw('Next Meeting',d.brNextMeeting);
+    tb('Additional Notes',d.brNotes);
+
   } else {
-    // Score section
-    const sc=parseInt(d.score)||0;
-    const sc3=sc>=90?[34,197,94]:sc>=75?[34,197,94]:sc>=60?[245,158,11]:[227,24,55];
-    doc.setFillColor(...sc3);doc.roundedRect(W-M-34,44,36,22,3,3,'F');
-    doc.setTextColor(255,255,255);doc.setFontSize(18);doc.setFont('helvetica','bold');
-    doc.text(String(sc),W-M-16,57,{align:'center'});
-    doc.setFontSize(6);doc.setFont('helvetica','normal');doc.text('/100',W-M-16,62,{align:'center'});
-
+    // ── AUDIT VISITS ──
     if(visitType!=='peak'){
-      sh('FSCC — Food Safety Critical ('+d.fsccScore+'/50)','🧼');
-      rw('Handwash Poster',d.hwPoster);rw('Soap Dispenser',d.hwSoap);rw('Paper Towels',d.hwTowel);
-      rw('Hand Sanitiser',d.hwSanitiser);rw('Roller Cut-off',d.rollerCutoff);rw('Mixer Cut-off',d.mixerCutoff);
-      rw('FSS Certificate',d.fssValid);rw('Sanitiser Buckets',d.sanitiserBuckets);
-      rw('HutBot Completed',d.hutBotCompleted);rw('Ice Calibration',d.iceCalibration);
-      if(d.iceCalibration==='Yes'){rw('Cheese Temp °C',d.cheeseTemp);rw('Veggie Temp °C',d.veggieTemp);rw('Meat Temp °C',d.meatTemp);rw('Maketable Score',d.maketableScore);}
-      rw('Ice Tray Filled',d.iceTrayFilled);rw('Tracking Sheets',d.trackingSheets);
-      rw('Ingredients In Date',d.everythingInDate);if(d.expiredIngredients)rw('Expired Items',d.expiredIngredients,true);
-      rw('Foyer Clean',d.foyerClean);rw('Pest Activity Clear',d.pestActivity==='No'?'Yes':'No');
-      tb('Food Safety Comments',d.foodSafetyComments);y+=4;
+      // Score breakdown
+      scoreBox(parseInt(d.fsccScore)||0, parseInt(d.brandScore)||0);
+      y+=4;
 
-      sh('Brand Standard ('+d.brandScore+'/50)','⭐');
-      rw('Oven Exhaust',d.ovenExhaust);rw('Dough Storage',d.doughStorage);rw('Dough Dated',d.doughDated);
-      rw('Dough Quality',d.doughQuality);rw('Pizza Standards',d.pizzaMeetsStandard);
-      if(d.pizzaIssues)rw('Pizza Issues',d.pizzaIssues,true);
-      rw('Open Sign',d.openSign);rw('Menu Updated',d.menuUpdated);rw('Lights Working',d.foyerLights);
-      rw('Donesafe Access',d.donesafeAccess);rw('Open Complaints',d.openComplaints==='No'?'None':'Yes – action required');
-      rw('Certified Manager',d.certifiedManager);rw('Uniform Compliant',d.uniformCompliant);
-      rw('Deployment Plan',d.deploymentPlan);tb('General Comments',d.generalComments);y+=4;
+      sh('FSCC — Food Safety Critical',[14,116,144]);
+      rw('Handwash Poster',d.hwPoster);
+      rw('Soap Dispenser',d.hwSoap);
+      rw('Paper Towels',d.hwTowel);
+      rw('Hand Sanitiser',d.hwSanitiser);
+      rw('Roller Cut-off',d.rollerCutoff);
+      rw('Mixer Cut-off',d.mixerCutoff);
+      rw('FSS Certificate',d.fssValid);
+      rw('Sanitiser Buckets',d.sanitiserBuckets);
+      rw('HutBot Completed',d.hutBotCompleted);
+      rw('Ice Calibration',d.iceCalibration);
+      if(d.iceCalibration==='Yes'){
+        rw('Cheese Temp',d.cheeseTemp?d.cheeseTemp+'°C':'—');
+        rw('Veggie Temp',d.veggieTemp?d.veggieTemp+'°C':'—');
+        rw('Meat Temp',d.meatTemp?d.meatTemp+'°C':'—');
+        rw('Maketable Score',d.maketableScore);
+      }
+      rw('Ice Tray Filled',d.iceTrayFilled);
+      rw('Tracking Sheets',d.trackingSheets);
+      rw('Ingredients In Date',d.everythingInDate);
+      if(d.expiredIngredients) rw('Expired Items',d.expiredIngredients,true);
+      rw('Foyer Clean',d.foyerClean);
+      rw('Pest Clear',d.pestActivity==='No'?'Yes':'No');
+      tb('Food Safety Comments',d.foodSafetyComments);
+      y+=4;
 
-      sh('Pest Control','🐛');
-      rw('Last Service',d.lastPestVisit);rw('Activity',d.pestActivity);tb('Locations',d.pestLocations);y+=4;
+      sh('Brand Standard',[109,40,217]);
+      rw('Oven Exhaust',d.ovenExhaust);
+      rw('Dough Storage',d.doughStorage);
+      if(d.doughStorageIssues) rw('Storage Issues',d.doughStorageIssues,true);
+      rw('Dough Dated',d.doughDated);
+      rw('Dough Quality',d.doughQuality);
+      if(d.doughQualityIssues) rw('Quality Issues',d.doughQualityIssues,true);
+      rw('Pizza Standards',d.pizzaMeetsStandard);
+      if(d.pizzaIssues) rw('Pizza Issues',d.pizzaIssues,true);
+      rw('Open Sign',d.openSign);
+      rw('Menu Updated',d.menuUpdated);
+      rw('Lights Working',d.foyerLights);
+      rw('Donesafe Access',d.donesafeAccess);
+      rw('Open Complaints',d.openComplaints==='No'?'None ✓':'Yes – action required');
+      rw('Certified Manager',d.certifiedManager);
+      rw('Uniform Compliant',d.uniformCompliant);
+      rw('Deployment Plan',d.deploymentPlan);
+      tb('General Comments',d.generalComments);
+      y+=4;
+
+      sh('Pest Control',[21,128,61]);
+      rw('Last Service',d.lastPestVisit);
+      if(d.lastPestVisit){
+        const days=Math.round((Date.now()-new Date(d.lastPestVisit).getTime())/86400000);
+        rw('Days Since',days+(days>90?' ⚠️ OVERDUE':''));
+      }
+      rw('Activity Found',d.pestActivity);
+      tb('Locations',d.pestLocations);
+
     } else {
-      sh('Peak Visit — Dough Quality','🫓');
-      rw('Dough Storage',d.doughStorage);rw('Dough Dated',d.doughDated);rw('Dough Quality',d.doughQuality);
-      if(d.doughQualityIssues)rw('Issues',d.doughQualityIssues,true);y+=4;
-      sh('Peak Visit — Pizza Quality','🍕');
-      rw('Meets Standards',d.pizzaMeetsStandard);if(d.pizzaIssues)rw('Issues',d.pizzaIssues,true);y+=4;
-      sh('Peak Visit — Team','👥');
-      rw('Certified Manager',d.certifiedManager);rw('Uniform & Hat',d.uniformCompliant);rw('Deployment Plan',d.deploymentPlan);y+=4;
+      // Peak visit
+      sh('Peak Visit — Dough',[109,40,217]);
+      rw('Dough Storage',d.doughStorage);
+      rw('Dough Dated',d.doughDated);
+      rw('Dough Quality',d.doughQuality);
+      if(d.doughQualityIssues) rw('Issues',d.doughQualityIssues,true);
+      y+=4;
+
+      sh('Peak Visit — Pizza',[190,24,93]);
+      rw('Meets Standards',d.pizzaMeetsStandard);
+      if(d.pizzaIssues) rw('Issues',d.pizzaIssues,true);
+      y+=4;
+
+      sh('Peak Visit — Team',[55,65,81]);
+      rw('Certified Manager',d.certifiedManager);
+      rw('Uniform & Hat',d.uniformCompliant);
+      rw('Deployment Plan',d.deploymentPlan);
     }
   }
 
-  if(d.photoFolderPath){sh('Photos','📷');tb('Photo Folder',d.photoFolderPath);}
-
+  // ── FOOTER ON ALL PAGES ──
   const pc=doc.internal.getNumberOfPages();
   for(let i=1;i<=pc;i++){
-    doc.setPage(i);doc.setFillColor(227,24,55);doc.rect(0,287,W,10,'F');
-    doc.setTextColor(255,255,255);doc.setFontSize(6.5);doc.setFont('helvetica','normal');
-    doc.text('StoreSmart · Pizza Hut Australia · Flynn Restaurant Group · CONFIDENTIAL',M,293);
-    doc.text(`Page ${i} of ${pc}`,W-M,293,{align:'right'});
+    doc.setPage(i);
+    doc.setFillColor(227,24,55);doc.rect(0,193,W,7,'F');
+    doc.setTextColor(255,255,255);doc.setFontSize(5);doc.setFont('helvetica','normal');
+    doc.text('StoreSmart · Pizza Hut AU · CONFIDENTIAL',M,197);
+    doc.text(`${i}/${pc}`,W-M,197,{align:'right'});
   }
-  doc.save(`${visitType==='business'?'BusinessReview':'StoreVisit'}_${(d.storeName||'XX').replace(/\s/g,'_')}_${d.visitDate||'date'}.pdf`);
+  doc.save(`${visitType==='business'?'BR':'SV'}_${(d.storeName||'XX').replace(/\s/g,'_')}_${d.visitDate||'date'}.pdf`);
 }
 
 // ══ OVERLAY ══
