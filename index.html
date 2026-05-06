@@ -231,7 +231,7 @@ input[type="number"]::-webkit-inner-spin-button,input[type="number"]::-webkit-ou
     <div class="q-hint" style="text-align:center;margin-bottom:24px;">Flynn Restaurant Group<br>Area Manager Store Visit Platform</div>
     <button class="btn-full btn-red" onclick="goTo('sc-login')" style="max-width:320px;">Start Store Visit →</button>
     <button class="btn-full btn-ghost" onclick="viewRecent()" style="max-width:320px;margin-top:10px;">📋 My Recent Visits</button>
-    <div style="font-size:11px;color:var(--dimmer);text-align:center;margin-top:20px;text-transform:uppercase;letter-spacing:1px;">StoreSmart v2.0</div>
+    <div style="font-size:11px;color:var(--dimmer);text-align:center;margin-top:20px;text-transform:uppercase;letter-spacing:1px;">StoreSmart v1.0</div>
   </div>
 </div>
 
@@ -479,6 +479,55 @@ input[type="number"]::-webkit-inner-spin-button,input[type="number"]::-webkit-ou
     <select class="mobile-input" id="oven2" style="padding:10px 12px;font-size:14px;"><option value="">—</option><option>Wow</option><option>Blodgett</option><option>XLT</option><option>Lincoln</option><option>Middleby</option><option>N/A</option><option>Other</option></select></div>
     <div><div style="font-size:11px;color:var(--dim);margin-bottom:6px;text-transform:uppercase;font-weight:700;">Oven 3</div>
     <select class="mobile-input" id="oven3" style="padding:10px 12px;font-size:14px;"><option value="">—</option><option>Wow</option><option>Blodgett</option><option>XLT</option><option>Lincoln</option><option>Middleby</option><option>N/A</option><option>Other</option></select></div>
+  </div>
+
+  <!-- Oven Temperature & Belt Speed -->
+  <div class="sec-divider"></div>
+  <div class="q-hint" style="color:var(--white);font-weight:600;margin-bottom:14px;">Oven Readings</div>
+
+  <!-- Oven 1 Readings -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;color:var(--white);margin-bottom:12px;">Oven 1</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div>
+        <div class="q-hint" style="margin-bottom:6px;font-size:11px;">Temperature (°C)</div>
+        <input class="mobile-input" type="number" id="oven1Temp" placeholder="e.g. 285" step="0.1" style="padding:11px 14px;">
+      </div>
+      <div>
+        <div class="q-hint" style="margin-bottom:6px;font-size:11px;">Belt Speed (mins)</div>
+        <input class="mobile-input" type="number" id="oven1Belt" placeholder="e.g. 6.5" step="0.1" style="padding:11px 14px;">
+      </div>
+    </div>
+  </div>
+
+  <!-- Oven 2 Readings -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;color:var(--white);margin-bottom:12px;">Oven 2</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div>
+        <div class="q-hint" style="margin-bottom:6px;font-size:11px;">Temperature (°C)</div>
+        <input class="mobile-input" type="number" id="oven2Temp" placeholder="e.g. 285" step="0.1" style="padding:11px 14px;">
+      </div>
+      <div>
+        <div class="q-hint" style="margin-bottom:6px;font-size:11px;">Belt Speed (mins)</div>
+        <input class="mobile-input" type="number" id="oven2Belt" placeholder="e.g. 6.5" step="0.1" style="padding:11px 14px;">
+      </div>
+    </div>
+  </div>
+
+  <!-- Oven 3 Readings -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:18px;">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;color:var(--white);margin-bottom:12px;">Oven 3</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div>
+        <div class="q-hint" style="margin-bottom:6px;font-size:11px;">Temperature (°C)</div>
+        <input class="mobile-input" type="number" id="oven3Temp" placeholder="e.g. 285" step="0.1" style="padding:11px 14px;">
+      </div>
+      <div>
+        <div class="q-hint" style="margin-bottom:6px;font-size:11px;">Belt Speed (mins)</div>
+        <input class="mobile-input" type="number" id="oven3Belt" placeholder="e.g. 6.5" step="0.1" style="padding:11px 14px;">
+      </div>
+    </div>
   </div>
 
   <div class="q-sub" style="margin-top:0;">Oven exhaust built in?</div>
@@ -1175,7 +1224,7 @@ function validate() {
     let ok=true;
     if(!F.ovenExhaust){err('fg-exhaust');ok=false;}
     if(!F.everythingInDate){err('fg-indate');ok=false;}
-    if(ok){F.oven1=document.getElementById('oven1').value;F.oven2=document.getElementById('oven2').value;F.oven3=document.getElementById('oven3').value;F.expiredIngredients=document.getElementById('expiredIngredients').value;F.expiringToday=document.getElementById('expiringToday').value;}
+    if(ok){F.oven1=document.getElementById('oven1').value;F.oven2=document.getElementById('oven2').value;F.oven3=document.getElementById('oven3').value;F.oven1Temp=document.getElementById('oven1Temp').value;F.oven1Belt=document.getElementById('oven1Belt').value;F.oven2Temp=document.getElementById('oven2Temp').value;F.oven2Belt=document.getElementById('oven2Belt').value;F.oven3Temp=document.getElementById('oven3Temp').value;F.oven3Belt=document.getElementById('oven3Belt').value;F.expiredIngredients=document.getElementById('expiredIngredients').value;F.expiringToday=document.getElementById('expiringToday').value;}
     return ok;
   }
   if (sc==='sc-dough') {
@@ -1435,6 +1484,10 @@ async function submitForm() {
       IceTrayFilled:lastData.iceTrayFilled||'',TrackingSheets:lastData.trackingSheets||'',
       FoodSafetyComments:lastData.foodSafetyComments||'',Oven1:lastData.oven1||'',
       Oven2:lastData.oven2||'',Oven3:lastData.oven3||'',OvenExhaust:lastData.ovenExhaust||'',
+      GeneralComments:(lastData.generalComments||'')+
+        (lastData.oven1Temp?'\nOven 1: '+lastData.oven1Temp+'°C / '+lastData.oven1Belt+' mins':'')  +
+        (lastData.oven2Temp?'\nOven 2: '+lastData.oven2Temp+'°C / '+lastData.oven2Belt+' mins':'')  +
+        (lastData.oven3Temp?'\nOven 3: '+lastData.oven3Temp+'°C / '+lastData.oven3Belt+' mins':''),
       EverythingInDate:lastData.everythingInDate||'',ExpiredIngredients:lastData.expiredIngredients||'',
       ExpiringToday:lastData.expiringToday||'',DoughStorage:lastData.doughStorage||'',
       DoughStorageIssues:lastData.doughStorageIssues||'',DoughDated:lastData.doughDated||'',
@@ -1711,7 +1764,12 @@ function downloadPDF() {
       y+=4;
 
       sh('Brand Standard',[109,40,217]);
-      rw('Oven Exhaust',d.ovenExhaust);
+      rw('Oven 1 Type',d.oven1);
+      if(d.oven1Temp||d.oven1Belt){rw('Oven 1 Temp',d.oven1Temp?d.oven1Temp+'°C':'—');rw('Oven 1 Belt',d.oven1Belt?d.oven1Belt+' mins':'—');}
+      rw('Oven 2 Type',d.oven2);
+      if(d.oven2Temp||d.oven2Belt){rw('Oven 2 Temp',d.oven2Temp?d.oven2Temp+'°C':'—');rw('Oven 2 Belt',d.oven2Belt?d.oven2Belt+' mins':'—');}
+      rw('Oven 3 Type',d.oven3);
+      if(d.oven3Temp||d.oven3Belt){rw('Oven 3 Temp',d.oven3Temp?d.oven3Temp+'°C':'—');rw('Oven 3 Belt',d.oven3Belt?d.oven3Belt+' mins':'—');}
       rw('Dough Storage',d.doughStorage);
       if(d.doughStorageIssues) rw('Storage Issues',d.doughStorageIssues,true);
       rw('Dough Dated',d.doughDated);
